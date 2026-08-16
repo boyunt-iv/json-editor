@@ -1236,9 +1236,9 @@
           Samples ▾
         </button>
         <div class="dropdown-menu" id="sampleDropdownMenu">
-          <div class="dropdown-item" data-sample="lending">💳 Lending Tables (Application/Party/Account)</div>
+          <div class="dropdown-item" data-sample="ecommerce_relational">🛒 Relational Tables (Orders / Items / Shipping)</div>
           <div class="dropdown-item" data-sample="users">👥 Users & Profiles</div>
-          <div class="dropdown-item" data-sample="ecommerce">🛍️ E-Commerce Orders</div>
+          <div class="dropdown-item" data-sample="ecommerce">🛍️ E-Commerce Orders (Flat Array)</div>
           <div class="dropdown-item" data-sample="nested">🌳 Deep Nested Config</div>
           <div class="dropdown-item" data-sample="geojson">🗺️ GeoJSON Coordinates</div>
           <div class="dropdown-item" data-sample="package">📦 Package.json Spec</div>
@@ -1516,9 +1516,8 @@
                   <button class="btn btn-sm" id="btnHierarchyPresets">Presets ▾</button>
                   <div class="dropdown-menu right" id="hierarchyPresetsMenu" style="min-width:240px;">
                     <div style="padding:4px 8px; font-size:10px; font-weight:bold; color:var(--text-muted);">BUILT-IN TEMPLATES</div>
-                    <div class="dropdown-item" data-hier-preset="ecommerce">🛍️ E-Commerce (orders -> customer, items)</div>
-                    <div class="dropdown-item" data-hier-preset="lending">💳 Lending (application -> party -> address)</div>
-                    <div class="dropdown-item" data-hier-preset="org">🏢 Company (company -> dept -> team)</div>
+                    <div class="dropdown-item" data-hier-preset="ecommerce">🛒 Orders & Items (orders -> items, orders -> shipping)</div>
+                    <div class="dropdown-item" data-hier-preset="org">🏢 Company & Teams (company -> dept -> employee)</div>
                     <div class="dropdown-divider"></div>
                     <div style="padding:4px 8px; font-size:10px; font-weight:bold; color:var(--text-muted);">PRESET FILE & STORAGE</div>
                     <div class="dropdown-item" id="menuSaveHierCustom">⭐ Save to Browser Quick Presets...</div>
@@ -1965,106 +1964,74 @@
         }
       };
 
-      // Generic relational sample dataset for hierarchy demo (Application -> Party -> Address, Application -> Account)
-      const LENDING_DATA = {
-        "application": [
+      // Generic Relational E-Commerce dataset for hierarchy demo (Orders -> Items, Orders -> Shipping)
+      const ECOMMERCE_RELATIONAL_DATA = {
+        "orders": [
           {
-            "id": "APP-2026-001",
-            "application_no": "APP-100982",
-            "product_code": "AUTO_LOAN",
-            "status": "APPROVED",
-            "loan_amount": 750000.00,
-            "created_at": "2026-08-16T10:00:00Z"
+            "id": "ORD-2026-001",
+            "order_number": "PO-10082",
+            "order_date": "2026-08-16",
+            "customer_name": "Alex Morgan",
+            "total_amount": 1250.00,
+            "status": "COMPLETED"
           },
           {
-            "id": "APP-2026-002",
-            "application_no": "APP-100983",
-            "product_code": "MORTGAGE",
-            "status": "PENDING",
-            "loan_amount": 3500000.00,
-            "created_at": "2026-08-16T11:30:00Z"
+            "id": "ORD-2026-002",
+            "order_number": "PO-10083",
+            "order_date": "2026-08-16",
+            "customer_name": "Sarah Jenkins",
+            "total_amount": 420.50,
+            "status": "PROCESSING"
           }
         ],
-        "appl_party": [
+        "order_items": [
           {
-            "id": "PTY-01",
-            "application_id": "APP-2026-001",
-            "party_type": "PRIMARY_BORROWER",
-            "citizen_id": "1103700987654",
-            "name": "Alex Morgan",
-            "mobile": "0812345678",
-            "income": 65000.00
+            "id": "ITEM-101",
+            "order_id": "ORD-2026-001",
+            "product_name": "Mechanical Keyboard",
+            "category": "Electronics",
+            "quantity": 2,
+            "unit_price": 120.00
           },
           {
-            "id": "PTY-02",
-            "application_id": "APP-2026-001",
-            "party_type": "GUARANTOR",
-            "citizen_id": "3100600123456",
-            "name": "Sarah Jenkins",
-            "mobile": "0898765432",
-            "income": 45000.00
+            "id": "ITEM-102",
+            "order_id": "ORD-2026-001",
+            "product_name": "4K UltraWide Monitor",
+            "category": "Hardware",
+            "quantity": 1,
+            "unit_price": 499.00
           },
           {
-            "id": "PTY-03",
-            "application_id": "APP-2026-002",
-            "party_type": "PRIMARY_BORROWER",
-            "citizen_id": "1100500998877",
-            "name": "David Miller",
-            "mobile": "0855551234",
-            "income": 120000.00
+            "id": "ITEM-103",
+            "order_id": "ORD-2026-002",
+            "product_name": "Wireless Ergonomic Mouse",
+            "category": "Electronics",
+            "quantity": 1,
+            "unit_price": 79.00
           }
         ],
-        "appl_party_address": [
+        "order_shipping": [
           {
-            "id": "ADDR-01",
-            "appl_party_id": "PTY-01",
-            "address_type": "REGISTERED",
-            "line1": "742 Evergreen Terrace",
-            "district": "Springfield",
-            "province": "Central",
-            "zipcode": "10900"
+            "id": "SHIP-01",
+            "order_id": "ORD-2026-001",
+            "carrier": "FedEx Express",
+            "tracking_number": "TRK-998822",
+            "address": "742 Evergreen Terrace, Springfield",
+            "delivered": true
           },
           {
-            "id": "ADDR-02",
-            "appl_party_id": "PTY-01",
-            "address_type": "WORK",
-            "line1": "Empire Tower Floor 24",
-            "district": "Metropolis",
-            "province": "Central",
-            "zipcode": "10900"
-          },
-          {
-            "id": "ADDR-03",
-            "appl_party_id": "PTY-02",
-            "address_type": "CURRENT",
-            "line1": "12/4 Grand Avenue",
-            "district": "Downtown",
-            "province": "Central",
-            "zipcode": "10110"
-          }
-        ],
-        "appl_account": [
-          {
-            "id": "ACC-01",
-            "application_id": "APP-2026-001",
-            "account_number": "123-4-56789-0",
-            "account_type": "SAVINGS",
-            "bank_code": "BK01",
-            "is_primary": true
-          },
-          {
-            "id": "ACC-02",
-            "application_id": "APP-2026-002",
-            "account_number": "987-6-54321-0",
-            "account_type": "CURRENT",
-            "bank_code": "BK01",
-            "is_primary": true
+            "id": "SHIP-02",
+            "order_id": "ORD-2026-002",
+            "carrier": "DHL Global",
+            "tracking_number": "TRK-334411",
+            "address": "12/4 Grand Avenue, Downtown",
+            "delivered": false
           }
         ]
       };
 
       const SAMPLE_DATA = {
-        lending: LENDING_DATA,
+        ecommerce_relational: ECOMMERCE_RELATIONAL_DATA,
         users: {
           "apiVersion": "2.4.0",
           "totalResults": 2,
@@ -2145,7 +2112,7 @@
         package: {
           "name": "json-studio-pro",
           "version": "1.0.0",
-          "description": "High performance, zero-ad JSON studio and analyzer",
+          "description": "High performance JSON studio and analyzer",
           "author": "Antigravity Devs",
           "license": "MIT",
           "dependencies": {
@@ -2162,10 +2129,9 @@
         "status": "ASSEMBLY_READY",
         "description": "Click '🌳 Hierarchy Builder' on top bar to transform relational datasets into nested object hierarchies!",
         "sampleHierarchy": [
-          "application",
-          "├── appl_party",
-          "│   └── appl_party_address",
-          "└── appl_account"
+          "orders",
+          "├── order_items",
+          "└── order_shipping"
         ]
       };
 
@@ -2742,7 +2708,7 @@
 
           // If no mappings defined yet, initialize default mapping
           if (!childNode.mappings || childNode.mappings.length === 0) {
-            const parentClean = childNode.parent.toLowerCase().replace(/^appl_/, '').replace(/s$/, '');
+            const parentClean = childNode.parent.toLowerCase().replace(/s$/, '');
             let defaultFk = childCols.find(c => c.toLowerCase().includes(parentClean) && c.toLowerCase().endsWith('id')) || childCols[0] || 'id';
             let defaultPk = parentCols.includes('id') ? 'id' : parentCols[0] || 'id';
             childNode.mappings = [{ childField: defaultFk, parentField: defaultPk }];
@@ -2920,13 +2886,12 @@
         function findMatchingForeignKey(parentName, parentRow, childName, childRows) {
           if (!childRows || childRows.length === 0) return null;
           const sampleChild = childRows[0];
-          const parentClean = parentName.toLowerCase().replace(/^appl_/, '').replace(/s$/, '');
+          const parentClean = parentName.toLowerCase().replace(/s$/, '');
           const candidateFks = [
             `${parentName}_id`, `${parentName}Id`,
             `${parentClean}_id`, `${parentClean}Id`,
             `parent_id`, `parentId`
           ];
-          if (parentName.startsWith('appl_')) candidateFks.push(`appl_${parentClean}_id`);
 
           let matchedFk = candidateFks.find(f => f in sampleChild);
           if (!matchedFk) {
@@ -3466,8 +3431,8 @@
 
         renderHierarchyDiagram(tree, elements.hierarchyVisualTree);
 
-        // Get source JSON data (from Left pane or Lending Sample)
-        const source = state.left.data || LENDING_DATA;
+        // Get source JSON data (from Left pane or E-Commerce Sample)
+        const source = state.left.data || ECOMMERCE_RELATIONAL_DATA;
 
         if (renderGui) {
           renderHierarchyMappingGui(tree, source);
@@ -3488,11 +3453,11 @@
       }
 
       function autoDetectHierarchyFromData(data) {
-        if (!data || typeof data !== 'object') return 'orders\n- customer [customer_id = id]\n  - address [address_id = id]\n- order_items [order_id = id]\n  - product [product_id = id]';
+        if (!data || typeof data !== 'object') return 'orders\n- order_items [order_id = id]\n- order_shipping [order_id = id]';
         if (Array.isArray(data)) return 'items';
 
         const keys = Object.keys(data);
-        if (keys.length === 0) return 'orders\n- customer [customer_id = id]\n  - address [address_id = id]\n- order_items [order_id = id]\n  - product [product_id = id]';
+        if (keys.length === 0) return 'orders\n- order_items [order_id = id]\n- order_shipping [order_id = id]';
 
         const arrayKeys = keys.filter(k => Array.isArray(data[k]));
         if (arrayKeys.length === 0) {
@@ -3506,10 +3471,10 @@
         childKeys.forEach(ck => {
           const parentMatch = childKeys.find(other => other !== ck && ck.startsWith(other));
           if (parentMatch) {
-            const cleanParent = parentMatch.replace(/^appl_/, '').replace(/s$/, '');
+            const cleanParent = parentMatch.replace(/s$/, '');
             lines.push(`  - ${ck} [${ck}_id = id]`);
           } else {
-            const cleanRoot = rootKey.replace(/^appl_/, '').replace(/s$/, '');
+            const cleanRoot = rootKey.replace(/s$/, '');
             lines.push(`- ${ck} [${cleanRoot}_id = id]`);
           }
         });
@@ -3521,7 +3486,7 @@
         elements.modalHierarchy.classList.add('active');
         if (!elements.hierarchyInputText.value.trim()) {
           const autoHier = autoDetectHierarchyFromData(state.left.data);
-          elements.hierarchyInputText.value = autoHier || `orders\n- customer [customer_id = id]\n  - address [address_id = id]\n- order_items [order_id = id]\n  - product [product_id = id]`;
+          elements.hierarchyInputText.value = autoHier || `orders\n- order_items [order_id = id]\n- order_shipping [order_id = id]`;
         }
         updateHierarchyLivePreview(true);
       });
@@ -3684,12 +3649,10 @@
         item.addEventListener('click', () => {
           const p = item.dataset.hierPreset;
           if (p === 'ecommerce') {
-            elements.hierarchyInputText.value = `orders\n- customer [customer_id = id]\n  - address [address_id = id]\n- order_items [order_id = id]\n  - product [product_id = id]`;
-          } else if (p === 'lending') {
-            elements.hierarchyInputText.value = `application\n- appl_party [application_id = id]\n  - appl_party_address [appl_party_id = id]\n- appl_account [application_id = id]`;
-            setPaneData('left', LENDING_DATA);
+            elements.hierarchyInputText.value = `orders\n- order_items [order_id = id]\n- order_shipping [order_id = id]`;
+            setPaneData('left', ECOMMERCE_RELATIONAL_DATA);
           } else if (p === 'org') {
-            elements.hierarchyInputText.value = `company\n- departments [company_id = id]\n  - teams [department_id = id]\n    - members [team_id = id]`;
+            elements.hierarchyInputText.value = `company\n- departments [company_id = id]\n  - employees [department_id = id]`;
           }
           elements.hierarchyPresetsMenu.classList.remove('active');
           updateHierarchyLivePreview(true);
@@ -5868,7 +5831,7 @@ ORD-1004,Diana Prince,Electronics,79.00,2,true,2026-08-14`;
       });
 
       // --- INITIAL LOAD ---
-      setPaneData('left', LENDING_DATA);
+      setPaneData('left', ECOMMERCE_RELATIONAL_DATA);
       setPaneData('right', RIGHT_SAMPLE_DATA);
     })();
   </script>
