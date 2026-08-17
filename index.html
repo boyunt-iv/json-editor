@@ -127,7 +127,8 @@
       flex-direction: column;
       overflow: hidden;
       -webkit-font-smoothing: antialiased;
-      user-select: none;
+      user-select: text;
+      -webkit-user-select: text;
     }
 
     /* Scrollbars */
@@ -857,7 +858,8 @@
       position: sticky;
       top: 0;
       z-index: 2;
-      user-select: none;
+      user-select: text;
+      -webkit-user-select: text;
       font-family: var(--font-mono);
       padding: 4px 8px;
     }
@@ -875,6 +877,8 @@
       flex: 1;
       overflow: hidden;
       text-overflow: ellipsis;
+      user-select: text;
+      -webkit-user-select: text;
     }
     .col-header-title:hover {
       color: var(--accent-primary);
@@ -884,6 +888,8 @@
       align-items: center;
       gap: 2px;
       flex-shrink: 0;
+      user-select: none;
+      -webkit-user-select: none;
     }
     .data-table th:hover .col-header-actions {
       display: flex;
@@ -896,8 +902,14 @@
       max-width: 320px;
       overflow: hidden;
       text-overflow: ellipsis;
-      cursor: pointer;
+      cursor: text;
       transition: background 0.1s;
+      user-select: text !important;
+      -webkit-user-select: text !important;
+    }
+    .data-table td * {
+      user-select: text !important;
+      -webkit-user-select: text !important;
     }
     .data-table td:hover {
       background: var(--bg-active) !important;
@@ -906,6 +918,10 @@
     .data-table tr:hover td {
       background: var(--bg-hover);
     }
+    .data-table td.cell-selected {
+      background: rgba(56, 139, 253, 0.18) !important;
+      outline: 1px solid var(--accent-primary) !important;
+    }
     .data-table .row-idx {
       width: 36px;
       text-align: center;
@@ -913,6 +929,19 @@
       background: var(--bg-panel-alt);
       font-family: var(--font-mono);
       cursor: default;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .cell-interactive,
+    .table-card-title,
+    .table-nav-pill,
+    #studioTableName,
+    #studioStatsBadge,
+    #studioSelectedPath,
+    .breadcrumb-item,
+    .status-bar {
+      user-select: text !important;
+      -webkit-user-select: text !important;
     }
 
     /* Hierarchy Mapping GUI Table */
@@ -3688,10 +3717,14 @@
 
       // Breadcrumb click to copy
       elements.leftBreadcrumb.addEventListener('click', () => {
+        const sel = window.getSelection ? window.getSelection().toString().trim() : '';
+        if (sel.length > 0) return;
         navigator.clipboard.writeText(state.left.selectedPath || '$');
         showToast(`Copied path: ${state.left.selectedPath || '$'}`, 'success');
       });
       elements.rightBreadcrumb.addEventListener('click', () => {
+        const sel = window.getSelection ? window.getSelection().toString().trim() : '';
+        if (sel.length > 0) return;
         navigator.clipboard.writeText(state.right.selectedPath || '$');
         showToast(`Copied path: ${state.right.selectedPath || '$'}`, 'success');
       });
@@ -5582,6 +5615,11 @@
         container.querySelectorAll('td[data-cell-path]').forEach(td => {
           td.addEventListener('click', (e) => {
             if (e.target.closest('button')) return;
+
+            // If user was drag-selecting / marking text with mouse, do not auto-copy full cell
+            const sel = window.getSelection ? window.getSelection().toString().trim() : '';
+            if (sel.length > 0) return;
+
             const cellPath = td.dataset.cellPath;
             const cellVal = td.dataset.cellVal !== undefined ? td.dataset.cellVal : '';
             state[side].selectedPath = cellPath;
@@ -6228,6 +6266,11 @@
         wrapper.querySelectorAll('td[data-studio-cell-path]').forEach(td => {
           td.addEventListener('click', (e) => {
             if (e.target.closest('button')) return;
+
+            // If user was drag-selecting / marking text with mouse, do not auto-copy full cell
+            const sel = window.getSelection ? window.getSelection().toString().trim() : '';
+            if (sel.length > 0) return;
+
             const path = td.dataset.studioCellPath;
             const val = td.dataset.studioCellVal !== undefined ? td.dataset.studioCellVal : '';
             const rowIdx = td.dataset.studioRowIdx !== undefined ? parseInt(td.dataset.studioRowIdx, 10) : null;
@@ -6747,6 +6790,9 @@
 
       // Copy Selected Path & Footer buttons
       elements.studioSelectedPath.addEventListener('click', () => {
+        const sel = window.getSelection ? window.getSelection().toString().trim() : '';
+        if (sel.length > 0) return;
+
         const rootData = state[tableStudioState.side]?.data;
         const fullPath = findFullJsonPathInRoot(
           rootData,
