@@ -3454,6 +3454,8 @@
         state[side].data = data;
         state[side].text = JSON.stringify(data, null, 2);
         state[side].error = null;
+        const textarea = side === 'left' ? elements.leftCodeTextarea : elements.rightCodeTextarea;
+        if (textarea) textarea.value = state[side].text;
         if (triggerRender) {
           renderPane(side);
         }
@@ -3465,6 +3467,8 @@
         const parsed = safeParse(text);
         state[side].data = parsed.data;
         state[side].error = parsed.error;
+        const textarea = side === 'left' ? elements.leftCodeTextarea : elements.rightCodeTextarea;
+        if (textarea) textarea.value = text;
         if (triggerRender) {
           renderPane(side);
         }
@@ -3477,8 +3481,8 @@
         
         // Update Code view textarea
         const textarea = isLeft ? elements.leftCodeTextarea : elements.rightCodeTextarea;
-        if (document.activeElement !== textarea) {
-          textarea.value = p.text;
+        if (textarea && textarea.value !== p.text) {
+          textarea.value = p.text ?? '';
         }
 
         // Update Line numbers
@@ -5079,78 +5083,133 @@
         breadcrumbs: [] // [ { name, rows, path, rawRows } ]
       };
 
-      function findFullJsonPathInRoot(rootData, targetTableName, rowIdx = null, colName = null) {
-        const rowPart = rowIdx !== null ? `[${rowIdx}]` : '';
-        const colPart = colName ? (rowIdx !== null ? `.${colName}` : `[*].${colName}`) : '';
+      function findHierarchyAncestors(targetTableName, sourceData) {
+        if (!targetTableName) return [];
+        
+        let tree = null;
+        try {
+          tree = buildDatasetHierarchyTree(sourceData);
+        } catch (e) {}
 
-        if (!rootData) {
-          return `$.${targetTableName}${rowPart}${colPart}`;
-        }
-
-        // 1. If active breadcrumb trail has deep path context
-        const crumbs = tableStudioState.breadcrumbs;
-        if (crumbs && crumbs.length > 0) {
-          const activeCrumb = crumbs[crumbs.length - 1];
-          if (activeCrumb && activeCrumb.path && (activeCrumb.name === targetTableName || activeCrumb.path.includes(targetTableName))) {
-            let base = activeCrumb.path;
-            if (rowIdx !== null && colName) {
-              return `${base}[${rowIdx}].${colName}`;
-            } else if (rowIdx !== null) {
-              return `${base}[${rowIdx}]`;
-            } else if (colName) {
-              return `${base}[*].${colName}`;
-            }
-            return base;
+        if (!tree || tree.length === 0) {
+          const defText = elements.hierarchyInputText ? elements.hierarchyInputText.value.trim() : '';
+          if (defText) {
+            try { tree = parseHierarchyText(defText); } catch(e){}
           }
         }
+        if (!tree || tree.length === 0) {
+          try {
+            const detected = autoDetectHierarchyFromData(sourceData);
+            if (detected) tree = parseHierarchyText(detected);
+          } catch(e){}
+        }
 
-        // 2. Deep recursive search in rootData
-        function searchPath(curr, currentPath, visited = new Set()) {
-          if (!curr || typeof curr !== 'object' || visited.has(curr)) return null;
-          visited.add(curr);
+        if (!tree || tree.length === 0) return [targetTableName];
 
-          if (Array.isArray(curr)) {
-            for (let i = 0; i < curr.length; i++) {
-              const item = curr[i];
-              if (item && typeof item === 'object') {
-                if (item[targetTableName] !== undefined) {
-                  return `${currentPath}[${i}].${targetTableName}`;
-                }
-                for (let k in item) {
-                  if (typeof item[k] === 'object' && item[k] !== null) {
-                    const res = searchPath(item[k], `${currentPath}[${i}].${k}`, visited);
-                    if (res) return res;
-                  }
-                }
-              }
+        function searchTree(nodes, currentChain) {
+          if (!nodes || nodes.length === 0) return null;
+          for (let node of nodes) {
+            const nextChain = [...currentChain, node.name];
+            if (node.name && node.name.toLowerCase() === targetTableName.toLowerCase()) {
+              return nextChain;
             }
-          } else {
-            if (curr[targetTableName] !== undefined) {
-              return `${currentPath}.${targetTableName}`;
-            }
-            for (let k in curr) {
-              if (typeof curr[k] === 'object' && curr[k] !== null) {
-                const res = searchPath(curr[k], `${currentPath}.${k}`, visited);
-                if (res) return res;
-              }
+            if (node.children && node.children.length > 0) {
+              const found = searchTree(node.children, nextChain);
+              if (found) return found;
             }
           }
           return null;
         }
 
-        let foundPath = searchPath(rootData, '$');
-        if (!foundPath) {
-          foundPath = `$.${targetTableName}`;
+        const foundChain = searchTree(tree, []);
+        return foundChain && foundChain.length > 0 ? foundChain : [targetTableName];
+      }
+
+      function findEmbeddedJsonPath(curr, targetTableName, currentPath = '$', visited = new Set()) {
+        if (!curr || typeof curr !== 'object' || visited.has(curr)) return null;
+        visited.add(curr);
+
+        if (Array.isArray(curr)) {
+          for (let i = 0; i < curr.length; i++) {
+            const item = curr[i];
+            if (item && typeof item === 'object') {
+              if (Array.isArray(item[targetTableName]) || (targetTableName in item)) {
+                return `${currentPath}[${i}].${targetTableName}`;
+              }
+              for (let k in item) {
+                if (typeof item[k] === 'object' && item[k] !== null) {
+                  const res = findEmbeddedJsonPath(item[k], targetTableName, `${currentPath}[${i}].${k}`, visited);
+                  if (res) return res;
+                }
+              }
+            }
+          }
+        } else {
+          if (currentPath !== '$' && (Array.isArray(curr[targetTableName]) || (targetTableName in curr))) {
+            return `${currentPath}.${targetTableName}`;
+          }
+          for (let k in curr) {
+            if (typeof curr[k] === 'object' && curr[k] !== null) {
+              const res = findEmbeddedJsonPath(curr[k], targetTableName, `${currentPath}.${k}`, visited);
+              if (res) return res;
+            }
+          }
+        }
+        return null;
+      }
+
+      function findFullJsonPathInRoot(rootData, targetTableName, rowIdx = null, colName = null) {
+        if (!targetTableName) return '$';
+
+        const rowPart = rowIdx !== null ? `[${rowIdx}]` : '';
+        const colPart = colName ? (rowIdx !== null ? `.${colName}` : `[*].${colName}`) : '';
+
+        // 1. If active breadcrumb trail has deep path context
+        const crumbs = tableStudioState.breadcrumbs;
+        if (crumbs && crumbs.length > 1) {
+          const activeCrumb = crumbs[crumbs.length - 1];
+          if (activeCrumb && activeCrumb.path && activeCrumb.path.includes('.') && (activeCrumb.name === targetTableName || activeCrumb.path.includes(targetTableName))) {
+            let base = activeCrumb.path;
+            if (rowIdx !== null && colName) return `${base}[${rowIdx}].${colName}`;
+            if (rowIdx !== null) return `${base}[${rowIdx}]`;
+            if (colName) return `${base}[*].${colName}`;
+            return base;
+          }
         }
 
-        if (rowIdx !== null && colName) {
-          return `${foundPath}[${rowIdx}].${colName}`;
-        } else if (rowIdx !== null) {
-          return `${foundPath}[${rowIdx}]`;
-        } else if (colName) {
-          return `${foundPath}[*].${colName}`;
+        // 2. Check embedded nested objects/arrays in JSON data
+        if (rootData && typeof rootData === 'object') {
+          const embeddedPath = findEmbeddedJsonPath(rootData, targetTableName, '$');
+          if (embeddedPath) {
+            if (rowIdx !== null && colName) return `${embeddedPath}[${rowIdx}].${colName}`;
+            if (rowIdx !== null) return `${embeddedPath}[${rowIdx}]`;
+            if (colName) return `${embeddedPath}[*].${colName}`;
+            return embeddedPath;
+          }
         }
-        return foundPath;
+
+        // 3. Trace Ancestor Chain from Dataset Hierarchy Tree
+        const ancestors = findHierarchyAncestors(targetTableName, rootData);
+        if (ancestors && ancestors.length > 1) {
+          if (rowIdx !== null && colName) {
+            const parts = ancestors.slice(0, -1).map(name => `${name}[0]`);
+            parts.push(`${targetTableName}[${rowIdx}].${colName}`);
+            return `$.${parts.join('.')}`;
+          } else if (rowIdx !== null) {
+            const parts = ancestors.slice(0, -1).map(name => `${name}[0]`);
+            parts.push(`${targetTableName}[${rowIdx}]`);
+            return `$.${parts.join('.')}`;
+          } else if (colName) {
+            const parts = ancestors.slice(0, -1).map(name => `${name}[*]`);
+            parts.push(`${targetTableName}[*].${colName}`);
+            return `$.${parts.join('.')}`;
+          } else {
+            const parts = ancestors.map(name => `${name}[*]`);
+            return `$.${parts.join('.')}`;
+          }
+        }
+
+        return `$.${targetTableName}${rowPart}${colPart}`;
       }
 
       function resolvePathData(root, path) {
@@ -5225,7 +5284,7 @@
         });
       }
 
-      function openTableStudio(side, tableName, customRows = null, customPath = null, isNavigatingBreadcrumb = false) {
+      function openTableStudio(side, tableName, customRows = null, customPath = null, navMode = 'hierarchy') {
         const p = state[side];
         if (!p || !p.data) return;
 
@@ -5243,13 +5302,46 @@
           }
         }
 
-        const fullPath = customPath || `$.${tableName}`;
+        const fullPath = customPath || findFullJsonPathInRoot(p.data, tableName);
 
-        if (!isNavigatingBreadcrumb) {
-          if (tableStudioState.breadcrumbs.length === 0 || !elements.modalTableStudio.classList.contains('active')) {
+        // Manage Breadcrumbs based on navMode:
+        // 'drilldown' -> append child sub-table
+        // 'breadcrumb' -> navigate within existing breadcrumb slice
+        // 'hierarchy' (default) -> build clean root-to-leaf ancestor trail from hierarchy tree
+        if (navMode === 'breadcrumb') {
+          if (tableStudioState.breadcrumbs.length > 0) {
+            const last = tableStudioState.breadcrumbs[tableStudioState.breadcrumbs.length - 1];
+            last.rows = rows;
+            last.rawRows = rows;
+            last.path = fullPath;
+          }
+        } else if (navMode === 'drilldown') {
+          if (tableStudioState.breadcrumbs.length === 0) {
             tableStudioState.breadcrumbs = [{ name: tableName, rows, path: fullPath, rawRows: rows }];
           } else {
             tableStudioState.breadcrumbs.push({ name: tableName, rows, path: fullPath, rawRows: rows });
+          }
+        } else {
+          // Hierarchy mode: Construct the TRUE root-to-leaf ancestor chain!
+          const ancestors = findHierarchyAncestors(tableName, p.data);
+          if (ancestors && ancestors.length > 0) {
+            tableStudioState.breadcrumbs = ancestors.map(ancName => {
+              let ancRows = [];
+              if (ancName === tableName) {
+                ancRows = rows;
+              } else {
+                ancRows = getEntityRowsFromSource(p.data, ancName) || [];
+              }
+              const ancPath = findFullJsonPathInRoot(p.data, ancName);
+              return {
+                name: ancName,
+                rows: ancRows,
+                path: ancPath,
+                rawRows: ancRows
+              };
+            });
+          } else {
+            tableStudioState.breadcrumbs = [{ name: tableName, rows, path: fullPath, rawRows: rows }];
           }
         }
 
@@ -5264,11 +5356,11 @@
         tableStudioState.selectedCellVal = '';
         tableStudioState.selectedRowIdx = null;
         tableStudioState.selectedCol = null;
-        tableStudioState.fullJsonPath = findFullJsonPathInRoot(p.data, tableName);
+        tableStudioState.fullJsonPath = fullPath;
 
         if (elements.studioSelectedPath) {
-          elements.studioSelectedPath.textContent = tableStudioState.fullJsonPath || fullPath;
-          elements.studioSelectedPath.setAttribute('title', `Click to copy full path: ${tableStudioState.fullJsonPath || fullPath}`);
+          elements.studioSelectedPath.textContent = fullPath;
+          elements.studioSelectedPath.setAttribute('title', `Click to copy full path: ${fullPath}`);
         }
 
         // Extract columns sorted by: id > application_id > *_seq > [A-Z fields] > [child tables]
@@ -5285,7 +5377,6 @@
         elements.studioStatsBadge.textContent = `${tableStudioState.rows.length} rows • ${tableStudioState.columns.length} cols`;
         elements.studioSearchInput.value = '';
         elements.studioClearSearch.style.display = 'none';
-        elements.studioSelectedPath.textContent = fullPath;
 
         renderStudioBreadcrumbs();
         renderStudioColumnVisibilityMenu();
@@ -5315,7 +5406,7 @@
 
         crumbs.forEach((crumb, idx) => {
           const isLast = idx === crumbs.length - 1;
-          const icon = idx === 0 ? '🏠' : '📦';
+          const icon = idx === 0 ? '🏠' : '📁';
           if (isLast) {
             html += `
               <span style="font-weight:700; color:var(--text-heading); background:var(--bg-hover); border:1px solid var(--border-focus); padding:2px 8px; border-radius:6px; font-size:11.5px;">
@@ -5338,9 +5429,8 @@
         if (btnBack) {
           btnBack.addEventListener('click', () => {
             if (tableStudioState.breadcrumbs.length > 1) {
-              tableStudioState.breadcrumbs.pop();
-              const prev = tableStudioState.breadcrumbs[tableStudioState.breadcrumbs.length - 1];
-              openTableStudio(tableStudioState.side, prev.name, prev.rawRows, prev.path, true);
+              const prev = tableStudioState.breadcrumbs[tableStudioState.breadcrumbs.length - 2];
+              openTableStudio(tableStudioState.side, prev.name, prev.rawRows, prev.path, 'hierarchy');
             }
           });
         }
@@ -5348,9 +5438,8 @@
         nav.querySelectorAll('[data-breadcrumb-idx]').forEach(el => {
           el.addEventListener('click', () => {
             const idx = parseInt(el.dataset.breadcrumbIdx, 10);
-            tableStudioState.breadcrumbs = tableStudioState.breadcrumbs.slice(0, idx + 1);
             const target = tableStudioState.breadcrumbs[idx];
-            openTableStudio(tableStudioState.side, target.name, target.rawRows, target.path, true);
+            openTableStudio(tableStudioState.side, target.name, target.rawRows, target.path, 'hierarchy');
           });
         });
       }
@@ -5583,7 +5672,7 @@
               } else if (typeof targetData === 'object') {
                 rows = [targetData];
               }
-              openTableStudio(side, name, rows, path);
+              openTableStudio(side, name, rows, path, 'drilldown');
               showToast(`Drilled into nested '${name}' (${rows.length} rows)!`, 'info');
               return;
             }
@@ -5615,7 +5704,7 @@
           rows = [targetData];
         }
 
-        openTableStudio(side, name, rows, path);
+        openTableStudio(side, name, rows, path, 'drilldown');
         showToast(`Drilled into nested '${name}' (${rows.length} rows)!`, 'info');
       }
 
@@ -6056,21 +6145,33 @@
 
       // Copy Selected Path & Footer buttons
       elements.studioSelectedPath.addEventListener('click', () => {
-        const fullPath = tableStudioState.fullJsonPath || tableStudioState.selectedCellPath;
+        const rootData = state[tableStudioState.side]?.data;
+        const fullPath = findFullJsonPathInRoot(
+          rootData,
+          tableStudioState.tableName,
+          tableStudioState.selectedRowIdx,
+          tableStudioState.selectedCol
+        );
         navigator.clipboard.writeText(fullPath);
         showToast(`Copied Full JSON Path: ${fullPath}`, 'success');
       });
 
       elements.studioBtnCopySelectedPath.addEventListener('click', () => {
-        const path = tableStudioState.selectedCellPath || `$.${tableStudioState.tableName}`;
-        navigator.clipboard.writeText(path);
-        showToast(`Copied Path: ${path}`, 'success');
+        const rootData = state[tableStudioState.side]?.data;
+        const fullPath = findFullJsonPathInRoot(
+          rootData,
+          tableStudioState.tableName,
+          tableStudioState.selectedRowIdx,
+          tableStudioState.selectedCol
+        );
+        navigator.clipboard.writeText(fullPath);
+        showToast(`Copied Full JSON Path: ${fullPath}`, 'success');
       });
 
       if (elements.studioBtnCopyFullPath) {
         elements.studioBtnCopyFullPath.addEventListener('click', () => {
           const rootData = state[tableStudioState.side]?.data;
-          const fullPath = tableStudioState.fullJsonPath || findFullJsonPathInRoot(
+          const fullPath = findFullJsonPathInRoot(
             rootData,
             tableStudioState.tableName,
             tableStudioState.selectedRowIdx,
@@ -6596,21 +6697,24 @@
       elements.fileInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
+        const targetSide = state.activeTargetPane || 'left';
         const reader = new FileReader();
         reader.onload = (evt) => {
           const content = evt.target.result;
-          if (file.name.endsWith('.csv')) {
-            const parsed = parseCsvToJson(content, { delimiter: ',' });
-            setPaneData(state.activeTargetPane, parsed);
-            showToast(`Converted and loaded CSV "${file.name}" (${parsed.length} rows)!`, 'success');
-          } else if (file.name.endsWith('.tsv')) {
-            const parsed = parseCsvToJson(content, { delimiter: '\t' });
-            setPaneData(state.activeTargetPane, parsed);
-            showToast(`Converted and loaded TSV "${file.name}" (${parsed.length} rows)!`, 'success');
-          } else {
-            setPaneText(state.activeTargetPane, content);
-            showToast(`Loaded file "${file.name}"`, 'success');
-          }
+          runWithLoading(`Loading file "${file.name}"...`, () => {
+            if (file.name.endsWith('.csv')) {
+              const parsed = parseCsvToJson(content, { delimiter: ',' });
+              setPaneData(targetSide, parsed);
+              showToast(`Converted and loaded CSV "${file.name}" (${parsed.length} rows)!`, 'success');
+            } else if (file.name.endsWith('.tsv')) {
+              const parsed = parseCsvToJson(content, { delimiter: '\t' });
+              setPaneData(targetSide, parsed);
+              showToast(`Converted and loaded TSV "${file.name}" (${parsed.length} rows)!`, 'success');
+            } else {
+              setPaneText(targetSide, content);
+              showToast(`Loaded file "${file.name}" into ${targetSide.toUpperCase()} pane`, 'success');
+            }
+          });
         };
         reader.readAsText(file);
         elements.fileInput.value = '';
@@ -6623,21 +6727,24 @@
         const files = e.dataTransfer.files;
         if (files.length > 0) {
           const file = files[0];
+          const targetPane = e.target.closest('#paneRight') ? 'right' : 'left';
           const reader = new FileReader();
           reader.onload = (evt) => {
             const content = evt.target.result;
-            if (file.name.endsWith('.csv')) {
-              const parsed = parseCsvToJson(content, { delimiter: ',' });
-              setPaneData('left', parsed);
-              showToast(`Converted and loaded CSV "${file.name}" into Left pane!`, 'success');
-            } else if (file.name.endsWith('.tsv')) {
-              const parsed = parseCsvToJson(content, { delimiter: '\t' });
-              setPaneData('left', parsed);
-              showToast(`Converted and loaded TSV "${file.name}" into Left pane!`, 'success');
-            } else {
-              setPaneText('left', content);
-              showToast(`Loaded dropped file "${file.name}" into Left pane`, 'success');
-            }
+            runWithLoading(`Loading dropped file "${file.name}"...`, () => {
+              if (file.name.endsWith('.csv')) {
+                const parsed = parseCsvToJson(content, { delimiter: ',' });
+                setPaneData(targetPane, parsed);
+                showToast(`Converted and loaded CSV "${file.name}" into ${targetPane.toUpperCase()} pane!`, 'success');
+              } else if (file.name.endsWith('.tsv')) {
+                const parsed = parseCsvToJson(content, { delimiter: '\t' });
+                setPaneData(targetPane, parsed);
+                showToast(`Converted and loaded TSV "${file.name}" into ${targetPane.toUpperCase()} pane!`, 'success');
+              } else {
+                setPaneText(targetPane, content);
+                showToast(`Loaded dropped file "${file.name}" into ${targetPane.toUpperCase()} pane`, 'success');
+              }
+            });
           };
           reader.readAsText(file);
         }
