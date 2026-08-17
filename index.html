@@ -903,7 +903,138 @@
     }
     .diff-add .diff-badge { background: var(--diff-add-border); color: #fff; }
     .diff-del .diff-badge { background: var(--diff-del-border); color: #fff; }
-    .diff-mod .diff-badge { background: var(--diff-mod-border); color: #fff; }
+    /* Table Studio Master-Detail Split Layout & Hierarchy Sidebar */
+    .studio-tree-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      padding: 6px 8px;
+      margin-bottom: 2px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.15s ease;
+      user-select: none;
+      border: 1px solid transparent;
+      color: var(--text-main);
+    }
+    .studio-tree-item:hover {
+      background: var(--bg-hover);
+      color: var(--text-heading);
+    }
+    .studio-tree-item.active {
+      background: rgba(56, 139, 253, 0.15);
+      border-color: rgba(56, 139, 253, 0.4);
+      color: var(--accent-primary);
+      font-weight: 600;
+    }
+    .studio-tree-item.zero-rows {
+      opacity: 0.65;
+    }
+    .studio-tree-item.zero-rows:hover {
+      opacity: 1;
+    }
+    .studio-tree-icon {
+      font-size: 13px;
+      flex-shrink: 0;
+      opacity: 0.9;
+    }
+    .studio-tree-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+    }
+    .studio-tree-badge {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      padding: 1px 6px;
+      border-radius: 10px;
+      flex-shrink: 0;
+    }
+    .studio-tree-badge.badge-count {
+      background: rgba(46, 160, 67, 0.2);
+      color: var(--accent-success);
+      border: 1px solid rgba(46, 160, 67, 0.3);
+    }
+    .studio-tree-badge.badge-zero {
+      background: rgba(110, 118, 129, 0.18);
+      color: var(--text-dim);
+      border: 1px solid rgba(110, 118, 129, 0.25);
+    }
+    .studio-tree-cond {
+      font-size: 9.5px;
+      font-family: var(--font-mono);
+      color: var(--accent-primary);
+      background: rgba(56, 139, 253, 0.12);
+      border: 1px solid rgba(56, 139, 253, 0.25);
+      padding: 1px 4px;
+      border-radius: 3px;
+      max-width: 95px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .studio-splitter {
+      width: 6px;
+      cursor: col-resize;
+      background: var(--border-color);
+      flex-shrink: 0;
+      transition: background 0.15s ease;
+      position: relative;
+      z-index: 15;
+    }
+    .studio-splitter:hover, .studio-splitter.dragging {
+      background: var(--accent-primary) !important;
+      box-shadow: 0 0 6px rgba(56, 139, 253, 0.5);
+    }
+
+    /* Global Loading Overlay (30% Dark Opacity) */
+    .global-loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.30);
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+      z-index: 999999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.12s ease;
+      pointer-events: all;
+    }
+    .global-loading-overlay.active {
+      display: flex;
+      opacity: 1;
+    }
+    .global-loading-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      border-radius: 8px;
+      padding: 12px 22px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--text-heading);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .global-spinner {
+      width: 18px;
+      height: 18px;
+      border: 2.5px solid rgba(56, 139, 253, 0.25);
+      border-top-color: var(--accent-primary);
+      border-radius: 50%;
+      animation: global-spin 0.65s linear infinite;
+    }
+    @keyframes global-spin {
+      to { transform: rotate(360deg); }
+    }
 
     /* Bottom Status Bar */
     .pane-status {
@@ -1269,6 +1400,11 @@
           <div class="dropdown-item" id="btnOpenGenerator">💻 Code Generator (TS / Python / Go / Rust)</div>
         </div>
       </div>
+
+      <span id="autoSaveIndicator" style="font-size:11px; color:var(--text-dim); display:flex; align-items:center; gap:4px; margin-right:4px; opacity:0.75; font-weight:500; font-family:var(--font-mono);" title="Auto-saved to browser local storage">
+        <svg class="icon icon-sm" style="color:var(--accent-success); width:12px; height:12px;" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Auto-Saved
+      </span>
 
       <button class="btn btn-sm btn-icon" id="btnToggleTheme" title="Toggle Light / Dark Theme">
         <svg class="icon" id="themeIcon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
@@ -1798,103 +1934,161 @@
     </div>
   </div>
 
-  <!-- MODAL: FULLSCREEN SINGLE TABLE FOCUS STUDIO -->
+  <!-- MODAL: FULLSCREEN SINGLE TABLE FOCUS STUDIO WITH DATASET HIERARCHY SIDEBAR -->
   <div class="modal-backdrop" id="modalTableStudio">
-    <div class="modal-card modal-card-xl" style="height:95vh; max-height:95vh;">
-      <div class="modal-header" style="flex-direction:column; align-items:stretch; gap:6px;">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div class="modal-card modal-card-xl" style="height:96vh; max-height:96vh; display:flex; flex-direction:column;">
+      
+      <!-- Studio Header -->
+      <div class="modal-header" style="padding:10px 16px;">
+        <div style="display:flex; align-items:center; gap:10px;">
           <div class="modal-title">
             <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
-            <span id="studioTableName" style="font-family:var(--font-mono); font-weight:700;">📁 Table Name</span>
-            <span class="table-nav-pill" id="studioStatsBadge" style="font-size:11px; padding:2px 8px;">0 rows &bull; 0 cols</span>
+            <span style="font-weight:700;">Focus Studio</span>
           </div>
-          <div style="display:flex; align-items:center; gap:8px;">
-            <button class="btn btn-sm btn-icon btn-ghost" id="btnCloseModalTableStudio" title="Close Focus View (Esc)">✕</button>
-          </div>
+          <button class="btn btn-sm" id="btnStudioToggleSidebar" title="Toggle Hierarchy Tree Sidebar" style="font-size:11.5px; padding:2px 8px;">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+            <span id="studioSidebarToggleText">Sidebar</span>
+          </button>
+          <div id="studioBreadcrumbNav" style="display:none; align-items:center; gap:6px; font-size:11.5px; overflow-x:auto; padding:2px 0;"></div>
         </div>
-        <!-- Breadcrumb navigation trail for nested child tables -->
-        <div id="studioBreadcrumbNav" style="display:none; align-items:center; gap:6px; font-size:11.5px; overflow-x:auto; padding:2px 0;"></div>
-      </div>
-      
-      <!-- Studio Toolbar -->
-      <div style="background:var(--bg-panel-header); border-bottom:1px solid var(--border-color); padding:8px 16px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-        <div style="display:flex; align-items:center; gap:8px; flex:1; max-width:420px;">
-          <div class="table-filter-input-wrap" style="flex:1;">
-            <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" class="table-filter-input" id="studioSearchInput" placeholder="Search rows, values, or columns..." />
-            <button class="btn btn-sm btn-icon btn-ghost" id="studioClearSearch" style="height:18px; width:18px; font-size:10px; display:none;">✕</button>
-          </div>
-          <span class="search-count" id="studioSearchCount">0 matches</span>
-        </div>
-
-        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-          <!-- Generate Queries Dropdown -->
-          <div class="dropdown">
-            <button class="btn btn-sm" id="btnStudioQueryMenu">⚡ Generate Query ▾</button>
-            <div class="dropdown-menu right" id="studioQueryDropdown" style="min-width:210px;">
-              <div class="dropdown-item" id="studioGenSqlInsert">🗄️ SQL INSERT Statements</div>
-              <div class="dropdown-item" id="studioGenSqlSelect">🔍 SQL SELECT Query</div>
-              <div class="dropdown-item" id="studioGenSqlCreate">📐 SQL CREATE TABLE DDL</div>
-              <div class="dropdown-item" id="studioGenMongo">🍃 MongoDB insertMany()</div>
-              <div class="dropdown-item" id="studioGenTs">🔷 TypeScript Interface</div>
-            </div>
-          </div>
-
-          <!-- Convert & Export Dropdown -->
-          <div class="dropdown">
-            <button class="btn btn-sm" id="btnStudioExportMenu">📥 Convert & Export ▾</button>
-            <div class="dropdown-menu right" id="studioExportDropdown" style="min-width:200px;">
-              <div class="dropdown-item" id="studioExportCsv">📊 Export CSV File</div>
-              <div class="dropdown-item" id="studioExportTsv">📑 Export TSV (Excel Friendly)</div>
-              <div class="dropdown-item" id="studioExportMd">📝 Copy as Markdown Table</div>
-              <div class="dropdown-item" id="studioCopyJson">📋 Copy Table JSON Array</div>
-            </div>
-          </div>
-
-          <!-- Copy Field Names Dropdown -->
-          <div class="dropdown">
-            <button class="btn btn-sm" id="btnStudioFieldMenu">📋 Copy Field Names ▾</button>
-            <div class="dropdown-menu right" id="studioFieldDropdown" style="min-width:200px;">
-              <div class="dropdown-item" id="studioCopyColsComma">Comma-separated (a, b, c)</div>
-              <div class="dropdown-item" id="studioCopyColsSql">SQL Quoted ("a", "b", "c")</div>
-              <div class="dropdown-item" id="studioCopyColsJson">JSON Array (["a", "b", ...])</div>
-              <div class="dropdown-item" id="studioCopyColsLines">Newline-separated</div>
-            </div>
-          </div>
-
-          <!-- Column Visibility Selector -->
-          <div class="dropdown">
-            <button class="btn btn-sm" id="btnStudioColVisibility">👁️ Columns ▾</button>
-            <div class="dropdown-menu right" id="studioColVisibilityMenu" style="max-height:260px; overflow-y:auto; min-width:200px; padding:6px;">
-              <!-- Generated Checkboxes -->
-            </div>
-          </div>
-
-          <button class="btn btn-sm" id="btnStudioFlattenToggle" title="Toggle flattening 1-level nested object properties into columns">⚡ Flatten Objects</button>
-          <button class="btn btn-sm" id="btnStudioResetSort" title="Reset Sorting">↕️ Reset Sort</button>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button class="btn btn-sm btn-icon btn-ghost" id="btnCloseModalTableStudio" title="Close Focus View (Esc)">✕</button>
         </div>
       </div>
 
-      <!-- Studio Modal Body Table View -->
-      <div class="modal-body" style="padding:0; overflow:hidden; flex:1; display:flex; flex-direction:column;">
-        <div id="studioTableWrapper" style="flex:1; overflow:auto; position:relative; background:var(--bg-panel);">
-          <!-- Fullscreen Data Table -->
+      <!-- Studio Main Content: Left Hierarchy Sidebar + Right Table Area -->
+      <div style="flex:1; display:flex; overflow:hidden; min-height:0;">
+        
+        <!-- LEFT SIDEBAR: Dataset Hierarchy Tree View -->
+        <div id="studioSidebar" style="width:310px; min-width:250px; max-width:400px; background:var(--bg-panel-alt); border-right:1px solid var(--border-color); display:flex; flex-direction:column; flex-shrink:0;">
+          
+          <!-- Sidebar Header: Title & Filter Toggles -->
+          <div style="padding:10px 12px; border-bottom:1px solid var(--border-color); background:var(--bg-panel-header); display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-weight:700; font-size:12px; color:var(--text-heading); display:flex; align-items:center; gap:6px;">
+                🌳 Dataset Hierarchy
+              </span>
+              <span id="studioSidebarStatsBadge" class="table-nav-pill" style="font-size:10.5px; padding:1px 6px; background:rgba(56,139,253,0.15); color:var(--accent-primary); font-weight:600;">0 tables</span>
+            </div>
+
+            <!-- Filter Controls -->
+            <div style="display:flex; gap:6px;">
+              <div class="table-filter-input-wrap" style="flex:1;">
+                <input type="text" class="table-filter-input" id="studioSidebarFilterInput" placeholder="Filter keys/tables..." style="font-size:11.5px; height:24px;" />
+              </div>
+              <div class="btn-group" style="display:inline-flex; border:1px solid var(--border-color); border-radius:5px; overflow:hidden; flex-shrink:0;">
+                <button class="btn btn-sm active" id="btnStudioSideShowAll" style="font-size:10.5px; padding:1px 6px; border-radius:0; border:none;" title="Show all tables">All</button>
+                <button class="btn btn-sm" id="btnStudioSideHideZero" style="font-size:10.5px; padding:1px 6px; border-radius:0; border:none; border-left:1px solid var(--border-color);" title="Hide tables with 0 records">Hide 0</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sidebar Body: Clean, modern hierarchy tree with active highlight -->
+          <div id="studioSidebarTreeContainer" style="flex:1; overflow-y:auto; padding:8px 6px;">
+            <!-- Tree nodes rendered dynamically -->
+          </div>
+
         </div>
+
+        <!-- RESIZE SPLITTER DRAG HANDLE -->
+        <div id="studioSplitter" class="studio-splitter" title="Drag left/right to resize Hierarchy Sidebar"></div>
+
+        <!-- RIGHT PANEL: Table View & Toolbar -->
+        <div style="flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0; background:var(--bg-panel);">
+          
+          <!-- Table Toolbar -->
+          <div style="background:var(--bg-panel-header); border-bottom:1px solid var(--border-color); padding:8px 16px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+            
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span id="studioTableName" style="font-family:var(--font-mono); font-weight:700; font-size:13px; color:var(--text-heading);">📁 Table Name</span>
+              <span class="table-nav-pill" id="studioStatsBadge" style="font-size:11px; padding:2px 8px;">0 rows &bull; 0 cols</span>
+            </div>
+
+            <!-- Search input in table -->
+            <div style="display:flex; align-items:center; gap:6px; flex:1; max-width:300px;">
+              <div class="table-filter-input-wrap" style="flex:1;">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" class="table-filter-input" id="studioSearchInput" placeholder="Search rows &amp; cells..." style="font-size:11.5px;" />
+                <button class="btn btn-sm btn-icon btn-ghost" id="studioClearSearch" style="height:18px; width:18px; font-size:10px; display:none;">✕</button>
+              </div>
+              <span class="search-count" id="studioSearchCount">0 matches</span>
+            </div>
+
+            <!-- Tool buttons: Generate Query, Convert & Export, Copy Fields, Columns, Flatten, Reset Sort -->
+            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+              <!-- Generate Queries Dropdown -->
+              <div class="dropdown">
+                <button class="btn btn-sm" id="btnStudioQueryMenu">⚡ Query ▾</button>
+                <div class="dropdown-menu right" id="studioQueryDropdown" style="min-width:210px;">
+                  <div class="dropdown-item" id="studioGenSqlInsert">🗄️ SQL INSERT Statements</div>
+                  <div class="dropdown-item" id="studioGenSqlSelect">🔍 SQL SELECT Query</div>
+                  <div class="dropdown-item" id="studioGenSqlCreate">📐 SQL CREATE TABLE DDL</div>
+                  <div class="dropdown-item" id="studioGenMongo">🍃 MongoDB insertMany()</div>
+                  <div class="dropdown-item" id="studioGenTs">🔷 TypeScript Interface</div>
+                </div>
+              </div>
+
+              <!-- Convert & Export Dropdown -->
+              <div class="dropdown">
+                <button class="btn btn-sm" id="btnStudioExportMenu">📥 Export ▾</button>
+                <div class="dropdown-menu right" id="studioExportDropdown" style="min-width:200px;">
+                  <div class="dropdown-item" id="studioExportCsv">📊 Export CSV File</div>
+                  <div class="dropdown-item" id="studioExportTsv">📑 Export TSV (Excel Friendly)</div>
+                  <div class="dropdown-item" id="studioExportMd">📝 Copy as Markdown Table</div>
+                  <div class="dropdown-item" id="studioCopyJson">📋 Copy Table JSON Array</div>
+                </div>
+              </div>
+
+              <!-- Copy Field Names Dropdown -->
+              <div class="dropdown">
+                <button class="btn btn-sm" id="btnStudioFieldMenu">📋 Fields ▾</button>
+                <div class="dropdown-menu right" id="studioFieldDropdown" style="min-width:200px;">
+                  <div class="dropdown-item" id="studioCopyColsComma">Comma-separated (a, b, c)</div>
+                  <div class="dropdown-item" id="studioCopyColsSql">SQL Quoted ("a", "b", "c")</div>
+                  <div class="dropdown-item" id="studioCopyColsJson">JSON Array (["a", "b", ...])</div>
+                  <div class="dropdown-item" id="studioCopyColsLines">Newline-separated</div>
+                </div>
+              </div>
+
+              <!-- Column Visibility Selector -->
+              <div class="dropdown">
+                <button class="btn btn-sm" id="btnStudioColVisibility">👁️ Columns ▾</button>
+                <div class="dropdown-menu right" id="studioColVisibilityMenu" style="max-height:260px; overflow-y:auto; min-width:200px; padding:6px;">
+                  <!-- Generated Checkboxes -->
+                </div>
+              </div>
+
+              <button class="btn btn-sm" id="btnStudioFlattenToggle" title="Toggle flattening 1-level nested object properties into columns">⚡ Flatten</button>
+              <button class="btn btn-sm" id="btnStudioResetSort" title="Reset Sorting">↕️ Reset</button>
+            </div>
+          </div>
+
+          <!-- Table View Container -->
+          <div id="studioTableWrapper" style="flex:1; overflow:auto; position:relative; background:var(--bg-panel);">
+            <!-- Fullscreen Data Table -->
+          </div>
+
+        </div>
+
       </div>
 
       <!-- Studio Modal Footer Status -->
       <div class="modal-footer" style="justify-content:space-between; padding:6px 16px; font-size:11.5px;">
-        <div style="display:flex; align-items:center; gap:8px;">
-          <span style="color:var(--text-muted);">Selected Path:</span>
-          <code id="studioSelectedPath" style="background:var(--bg-hover); padding:1px 6px; border-radius:4px; font-family:var(--font-mono); color:var(--accent-primary); cursor:pointer;" title="Click to copy path">$</code>
+        <div style="display:flex; align-items:center; gap:8px; overflow:hidden; flex:1; min-width:0;">
+          <span style="color:var(--text-muted); flex-shrink:0;">Selected Path:</span>
+          <code id="studioSelectedPath" style="background:var(--bg-hover); padding:1px 6px; border-radius:4px; font-family:var(--font-mono); color:var(--accent-primary); cursor:pointer; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:65%;" title="Click to copy path">$</code>
         </div>
-        <div style="display:flex; align-items:center; gap:6px;">
-          <button class="btn btn-sm btn-ghost" id="studioBtnCopySelectedPath">📋 Copy Path</button>
+        <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+          <button class="btn btn-sm btn-ghost" id="studioBtnCopySelectedPath" title="Copy relative path of selected cell">📋 Copy Path</button>
+          <button class="btn btn-sm btn-ghost" id="studioBtnCopyFullPath" title="Copy full root-to-leaf JSON Path (e.g. $.application[0].appl_party[0].id)">📑 Copy Full JSON Path</button>
           <button class="btn btn-sm btn-primary" id="btnCloseModalTableStudio2">Close Focus</button>
         </div>
       </div>
+
     </div>
   </div>
+
+
 
   <!-- MODAL: Help & Shortcuts -->
   <div class="modal-backdrop" id="modalHelp">
@@ -1922,6 +2116,14 @@
       <div class="modal-footer">
         <button class="btn btn-sm btn-primary" id="btnHelpGotIt">Got It</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Global Loading Overlay (30% Opacity) -->
+  <div id="globalLoadingOverlay" class="global-loading-overlay">
+    <div class="global-loading-card">
+      <div class="global-spinner"></div>
+      <span id="globalLoadingText">Processing...</span>
     </div>
   </div>
 
@@ -2244,12 +2446,22 @@
         studioCopyColsLines: document.getElementById('studioCopyColsLines'),
         btnStudioColVisibility: document.getElementById('btnStudioColVisibility'),
         studioColVisibilityMenu: document.getElementById('studioColVisibilityMenu'),
+        studioSidebar: document.getElementById('studioSidebar'),
+        studioSplitter: document.getElementById('studioSplitter'),
+        btnStudioToggleSidebar: document.getElementById('btnStudioToggleSidebar'),
+        studioSidebarToggleText: document.getElementById('studioSidebarToggleText'),
+        studioSidebarStatsBadge: document.getElementById('studioSidebarStatsBadge'),
+        studioSidebarFilterInput: document.getElementById('studioSidebarFilterInput'),
+        btnStudioSideShowAll: document.getElementById('btnStudioSideShowAll'),
+        btnStudioSideHideZero: document.getElementById('btnStudioSideHideZero'),
+        studioSidebarTreeContainer: document.getElementById('studioSidebarTreeContainer'),
         btnStudioFlattenToggle: document.getElementById('btnStudioFlattenToggle'),
         btnStudioResetSort: document.getElementById('btnStudioResetSort'),
         studioBreadcrumbNav: document.getElementById('studioBreadcrumbNav'),
         studioTableWrapper: document.getElementById('studioTableWrapper'),
         studioSelectedPath: document.getElementById('studioSelectedPath'),
         studioBtnCopySelectedPath: document.getElementById('studioBtnCopySelectedPath'),
+        studioBtnCopyFullPath: document.getElementById('studioBtnCopyFullPath'),
         
         // Modals
         modalAddProp: document.getElementById('modalAddProp'),
@@ -2340,6 +2552,9 @@
 
         // General
         toastContainer: document.getElementById('toastContainer'),
+        autoSaveIndicator: document.getElementById('autoSaveIndicator'),
+        globalLoadingOverlay: document.getElementById('globalLoadingOverlay'),
+        globalLoadingText: document.getElementById('globalLoadingText'),
         fileInput: document.getElementById('fileInput')
       };
 
@@ -2367,7 +2582,7 @@
       function applyTheme(theme) {
         state.theme = theme;
         document.documentElement.setAttribute('data-theme', theme);
-        localStorage.setItem('json_studio_theme', theme);
+        try { localStorage.setItem('json_studio_theme', theme); } catch(e){}
       }
       applyTheme(state.theme);
 
@@ -2375,6 +2590,162 @@
         const newTheme = state.theme === 'dark' ? 'light' : 'dark';
         applyTheme(newTheme);
         showToast(`Theme switched to ${newTheme}`, 'info');
+      });
+
+      // --- GLOBAL LOADING OVERLAY (30% OPACITY) ENGINE ---
+      function showLoading(msg = 'Processing...') {
+        if (elements.globalLoadingText) elements.globalLoadingText.textContent = msg;
+        if (elements.globalLoadingOverlay) elements.globalLoadingOverlay.classList.add('active');
+      }
+
+      function hideLoading() {
+        if (elements.globalLoadingOverlay) elements.globalLoadingOverlay.classList.remove('active');
+      }
+
+      function runWithLoading(msg, fn) {
+        showLoading(msg);
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            try {
+              fn();
+            } finally {
+              requestAnimationFrame(() => {
+                hideLoading();
+              });
+            }
+          }, 25);
+        });
+      }
+
+      // --- HIGH-CAPACITY INDEXEDDB SESSION PERSISTENCE ENGINE ---
+      const DB_NAME = 'JSONStudioPro_DB_v1';
+      const DB_STORE = 'app_session';
+      let idbInstance = null;
+
+      function getIDB() {
+        return new Promise((resolve) => {
+          if (idbInstance) return resolve(idbInstance);
+          if (!window.indexedDB) return resolve(null);
+          try {
+            const req = indexedDB.open(DB_NAME, 1);
+            req.onupgradeneeded = (e) => {
+              const db = e.target.result;
+              if (!db.objectStoreNames.contains(DB_STORE)) {
+                db.createObjectStore(DB_STORE);
+              }
+            };
+            req.onsuccess = (e) => {
+              idbInstance = e.target.result;
+              resolve(idbInstance);
+            };
+            req.onerror = () => resolve(null);
+          } catch(e) {
+            resolve(null);
+          }
+        });
+      }
+
+      async function idbSaveSession(sessionObj) {
+        try {
+          const db = await getIDB();
+          if (!db) return;
+          const tx = db.transaction(DB_STORE, 'readwrite');
+          const store = tx.objectStore(DB_STORE);
+          Object.entries(sessionObj).forEach(([k, v]) => {
+            store.put(v, k);
+          });
+        } catch (e) {}
+      }
+
+      async function idbLoadSession() {
+        try {
+          const db = await getIDB();
+          if (!db) return null;
+          return new Promise((resolve) => {
+            const tx = db.transaction(DB_STORE, 'readonly');
+            const store = tx.objectStore(DB_STORE);
+            const data = {};
+            const req = store.openCursor();
+            req.onsuccess = (e) => {
+              const cursor = e.target.result;
+              if (cursor) {
+                data[cursor.key] = cursor.value;
+                cursor.continue();
+              } else {
+                resolve(data);
+              }
+            };
+            req.onerror = () => resolve(null);
+          });
+        } catch (e) {
+          return null;
+        }
+      }
+
+      // --- SESSION PERSISTENCE ENGINE (INDEXEDDB + LOCALSTORAGE) ---
+      let saveSessionTimeout = null;
+      let isRestoringSession = false;
+
+      function saveSessionImmediately() {
+        if (isRestoringSession) return;
+        
+        const sessionPayload = {
+          left_text: state.left ? (state.left.text ?? '') : '',
+          right_text: state.right ? (state.right.text ?? '') : '',
+          left_view: state.left?.view ?? 'code',
+          right_view: state.right?.view ?? 'code',
+          layout: state.layout ?? 'split',
+          theme: state.theme ?? 'dark',
+          hierarchy_text: elements.hierarchyInputText?.value ?? '',
+          hierarchy_result: elements.hierarchyResultPreview?.value ?? '',
+          query_input: elements.queryInput?.value ?? '',
+          csv_input: elements.csvInputText?.value ?? '',
+          saved_at: Date.now()
+        };
+
+        // 1. Save to IndexedDB (No quota limits!)
+        idbSaveSession(sessionPayload);
+
+        // 2. Also mirror to LocalStorage
+        try {
+          localStorage.setItem('json_studio_left_text', sessionPayload.left_text);
+          localStorage.setItem('json_studio_right_text', sessionPayload.right_text);
+          localStorage.setItem('json_studio_left_view', sessionPayload.left_view);
+          localStorage.setItem('json_studio_right_view', sessionPayload.right_view);
+          localStorage.setItem('json_studio_layout', sessionPayload.layout);
+          localStorage.setItem('json_studio_theme', sessionPayload.theme);
+          localStorage.setItem('json_studio_hierarchy_text', sessionPayload.hierarchy_text);
+          localStorage.setItem('json_studio_hierarchy_result', sessionPayload.hierarchy_result);
+          localStorage.setItem('json_studio_query_input', sessionPayload.query_input);
+          localStorage.setItem('json_studio_csv_input', sessionPayload.csv_input);
+        } catch (e) {
+          // LocalStorage quota might exceed on huge files, IndexedDB already has it
+        }
+
+        // Visual Indicator Feedback
+        if (elements.autoSaveIndicator) {
+          elements.autoSaveIndicator.style.opacity = '1';
+          elements.autoSaveIndicator.innerHTML = `<svg class="icon icon-sm" style="color:var(--accent-success); width:12px; height:12px;" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Saved`;
+          setTimeout(() => {
+            if (elements.autoSaveIndicator) {
+              elements.autoSaveIndicator.style.opacity = '0.7';
+              elements.autoSaveIndicator.innerHTML = `<svg class="icon icon-sm" style="color:var(--accent-success); width:12px; height:12px;" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Auto-Saved`;
+            }
+          }, 1000);
+        }
+      }
+
+      function saveSessionToLocalStorage() {
+        if (isRestoringSession) return;
+        if (saveSessionTimeout) clearTimeout(saveSessionTimeout);
+        saveSessionTimeout = setTimeout(saveSessionImmediately, 250);
+      }
+
+      // Synchronously flush on page unload, visibility change, and blur
+      window.addEventListener('beforeunload', saveSessionImmediately);
+      window.addEventListener('pagehide', saveSessionImmediately);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') saveSessionImmediately();
       });
 
       // --- LAYOUT SWITCHING ---
@@ -2397,6 +2768,7 @@
           elements.paneRight.style.display = 'flex';
           elements.splitter.style.display = 'flex';
         }
+        saveSessionToLocalStorage();
       }
 
       elements.btnLayoutSingleLeft.addEventListener('click', () => setLayout('single-left'));
@@ -2630,35 +3002,175 @@
         return root.children;
       }
 
-      function getEntityColumns(sourceData, entityName) {
-        if (!sourceData || !entityName) return ['id'];
-        let rows = [];
+      function sortEntityColumns(cols, rows = []) {
+        // Determine if a column contains nested child tables (arrays) or complex objects
+        const isChildCol = (col) => {
+          if (!rows || rows.length === 0) return false;
+          for (let r of rows) {
+            if (r && typeof r === 'object' && r[col] !== undefined && r[col] !== null) {
+              if (typeof r[col] === 'object') return true;
+            }
+          }
+          return false;
+        };
+
+        const getPriority = (col) => {
+          const c = String(col).toLowerCase().trim();
+          if (isChildCol(col)) return 1000; // child tables always at the very end
+          if (c === 'id') return 1;
+          if (c === 'application_id') return 2;
+          if (c.endsWith('_seq') || c === 'seq' || c.endsWith('_seq_no') || c.endsWith('_seqno') || c.endsWith('_sequence')) return 3;
+          return 10; // normal data fields
+        };
+
+        return [...cols].sort((a, b) => {
+          const pA = getPriority(a);
+          const pB = getPriority(b);
+          if (pA !== pB) return pA - pB;
+          return String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: 'base' });
+        });
+      }
+
+      function getEntityRowsFromSource(sourceData, entityName) {
+        if (!sourceData || !entityName) return [];
+        
+        // 1. Direct array or top-level match
         if (Array.isArray(sourceData)) {
-          rows = sourceData;
+          if (entityName === 'items' || entityName === 'rows' || entityName === 'data' || entityName === 'Root Dataset') return sourceData;
         } else if (typeof sourceData === 'object' && sourceData !== null) {
-          if (sourceData[entityName] && Array.isArray(sourceData[entityName])) {
-            rows = sourceData[entityName];
+          if (Array.isArray(sourceData[entityName])) return sourceData[entityName];
+          for (let k in sourceData) {
+            if (k.toLowerCase() === entityName.toLowerCase() && Array.isArray(sourceData[k])) {
+              return sourceData[k];
+            }
+          }
+        }
+
+        // 2. Recursive Deep Collection from embedded arrays
+        const collected = [];
+        const visited = new Set();
+
+        function searchDeep(curr) {
+          if (!curr || typeof curr !== 'object' || visited.has(curr)) return;
+          visited.add(curr);
+
+          if (Array.isArray(curr)) {
+            curr.forEach(item => {
+              if (item && typeof item === 'object') {
+                if (Array.isArray(item[entityName])) {
+                  collected.push(...item[entityName]);
+                } else {
+                  for (let k in item) {
+                    if (k.toLowerCase() === entityName.toLowerCase() && Array.isArray(item[k])) {
+                      collected.push(...item[k]);
+                    }
+                  }
+                }
+                // Recurse into item child properties
+                for (let k in item) {
+                  if (typeof item[k] === 'object' && item[k] !== null) {
+                    searchDeep(item[k]);
+                  }
+                }
+              }
+            });
           } else {
-            for (let k in sourceData) {
-              if (k.toLowerCase() === entityName.toLowerCase() && Array.isArray(sourceData[k])) {
-                rows = sourceData[k];
-                break;
+            // Object
+            if (Array.isArray(curr[entityName])) {
+              collected.push(...curr[entityName]);
+            } else {
+              for (let k in curr) {
+                if (k.toLowerCase() === entityName.toLowerCase() && Array.isArray(curr[k])) {
+                  collected.push(...curr[k]);
+                }
+              }
+            }
+            // Recurse into object properties
+            for (let k in curr) {
+              if (typeof curr[k] === 'object' && curr[k] !== null) {
+                searchDeep(curr[k]);
               }
             }
           }
         }
-        if (rows.length === 0 || typeof rows[0] !== 'object' || rows[0] === null) return ['id'];
-        const cols = Object.keys(rows[0]);
-        cols.sort((a, b) => a.localeCompare(b));
-        return cols;
+
+        searchDeep(sourceData);
+        if (collected.length > 0) return collected;
+
+        // 3. Fallback: single object wrapped in array
+        const singleObjs = [];
+        const visitedObjs = new Set();
+        function searchSingleObj(curr) {
+          if (!curr || typeof curr !== 'object' || visitedObjs.has(curr)) return;
+          visitedObjs.add(curr);
+          if (Array.isArray(curr)) {
+            curr.forEach(searchSingleObj);
+          } else {
+            if (curr[entityName] && typeof curr[entityName] === 'object' && !Array.isArray(curr[entityName])) {
+              singleObjs.push(curr[entityName]);
+            }
+            for (let k in curr) {
+              if (typeof curr[k] === 'object' && curr[k] !== null) {
+                searchSingleObj(curr[k]);
+              }
+            }
+          }
+        }
+        searchSingleObj(sourceData);
+        if (singleObjs.length > 0) return singleObjs;
+
+        return [];
       }
 
-      function renderHierarchyDiagram(nodes, container, depth = 0) {
+      function getEntityColumns(sourceData, entityName) {
+        if (!sourceData || !entityName) return ['id'];
+        const rows = getEntityRowsFromSource(sourceData, entityName);
+        if (rows.length === 0 || typeof rows[0] !== 'object' || rows[0] === null) return ['id'];
+        const cols = Object.keys(rows[0]);
+        return sortEntityColumns(cols, rows);
+      }
+
+      function getNodeSubtreeRowCount(node, sourceData) {
+        if (!node) return 0;
+        let count = 0;
+        if (node.rowCount !== undefined) {
+          count += node.rowCount;
+        } else if (sourceData) {
+          const rows = getEntityRowsFromSource(sourceData, node.name);
+          count += rows ? rows.length : 0;
+        }
+        if (node.children && node.children.length > 0) {
+          node.children.forEach(c => {
+            count += getNodeSubtreeRowCount(c, sourceData);
+          });
+        }
+        return count;
+      }
+
+      function renderHierarchyDiagram(nodes, container, depth = 0, sourceData = null, onNodeClick = null, hideZero = false) {
         if (!nodes || nodes.length === 0) return;
         nodes.forEach(node => {
+          const rows = getEntityRowsFromSource(sourceData, node.name);
+          const rowCount = node.rowCount !== undefined ? node.rowCount : (rows ? rows.length : 0);
+          const subtreeCount = getNodeSubtreeRowCount(node, sourceData);
+
+          // If hideZero is enabled and neither this node nor any of its descendants have rows > 0, skip rendering
+          if (hideZero && subtreeCount === 0) {
+            return;
+          }
+
           const div = document.createElement('div');
           div.style.paddingLeft = `${depth * 20}px`;
-          div.style.marginBottom = '4px';
+          div.style.marginBottom = '6px';
+
+          let countBadge = '';
+          if (sourceData) {
+            const isZero = rowCount === 0;
+            const bg = isZero ? 'rgba(110,118,129,0.18)' : 'rgba(46,160,67,0.18)';
+            const color = isZero ? 'var(--text-dim)' : 'var(--accent-success)';
+            const border = isZero ? 'rgba(110,118,129,0.3)' : 'rgba(46,160,67,0.3)';
+            countBadge = `<span class="table-nav-pill" style="font-size:10.5px; padding:1px 6px; background:${bg}; color:${color}; border:1px solid ${border}; font-weight:600;">📊 ${rowCount} records</span>`;
+          }
 
           let condBadge = '';
           if (node.mappings && node.mappings.length > 0) {
@@ -2667,16 +3179,25 @@
           }
 
           div.innerHTML = `
-            <div class="hierarchy-node-pill">
+            <div class="hierarchy-node-pill" style="cursor:${onNodeClick ? 'pointer' : 'default'}; display:inline-flex; align-items:center; gap:6px; ${rowCount === 0 ? 'opacity:0.7;' : ''}" data-node-name="${escapeHtml(node.name)}">
               <span style="color:var(--accent-purple); font-weight:700;">${depth === 0 ? '📁 [Root]' : '↳ [Child]'}</span>
-              <span style="font-weight:600; color:var(--text-heading);">${escapeHtml(node.name)}</span>
+              <span style="font-weight:700; color:var(--text-heading); font-size:12px;">${escapeHtml(node.name)}</span>
+              ${countBadge}
               ${condBadge}
               ${node.parent ? `<span style="font-size:10px; color:var(--text-dim);">(Parent: ${escapeHtml(node.parent)})</span>` : ''}
+              ${onNodeClick ? `<span style="font-size:10px; color:var(--accent-primary); text-decoration:underline; margin-left:4px;">View Table ➔</span>` : ''}
             </div>
           `;
+
+          if (onNodeClick) {
+            div.querySelector('.hierarchy-node-pill').addEventListener('click', () => {
+              onNodeClick(node.name);
+            });
+          }
+
           container.appendChild(div);
           if (node.children && node.children.length > 0) {
-            renderHierarchyDiagram(node.children, container, depth + 1);
+            renderHierarchyDiagram(node.children, container, depth + 1, sourceData, onNodeClick, hideZero);
           }
         });
       }
@@ -2936,6 +3457,7 @@
         if (triggerRender) {
           renderPane(side);
         }
+        saveSessionToLocalStorage();
       }
 
       function setPaneText(side, text, triggerRender = true) {
@@ -2946,6 +3468,7 @@
         if (triggerRender) {
           renderPane(side);
         }
+        saveSessionToLocalStorage();
       }
 
       function renderPane(side) {
@@ -3450,45 +3973,260 @@
           elements.hierarchyResultPreview.value = `// Hierarchy Assembly Error:\n${err.message}`;
           elements.hierarchyMatchStats.textContent = 'Error in assembly';
         }
+        saveSessionToLocalStorage();
+      }
+
+      function buildDatasetHierarchyTree(sourceData, rootTableName = null, userDefText = '') {
+        if (!sourceData || typeof sourceData !== 'object') return null;
+
+        const allTableKeys = Object.keys(sourceData).filter(k => Array.isArray(sourceData[k]));
+        let currTable = rootTableName || (allTableKeys.includes('application') ? 'application' : allTableKeys[0]);
+
+        // Helper 1: Check embedded child array properties inside rows
+        function getEmbeddedChildKeys(rows) {
+          if (!rows || rows.length === 0) return [];
+          const childKeys = new Set();
+          rows.forEach(r => {
+            if (r && typeof r === 'object') {
+              Object.entries(r).forEach(([k, v]) => {
+                if (Array.isArray(v) && v.length >= 0) childKeys.add(k);
+              });
+            }
+          });
+          return Array.from(childKeys);
+        }
+
+        function buildEmbeddedTree(name, rows, visited = new Set()) {
+          if (visited.has(name)) return { name, children: [], rowCount: rows ? rows.length : 0, rows: rows || [] };
+          visited.add(name);
+
+          const childKeys = getEmbeddedChildKeys(rows);
+          const children = [];
+
+          childKeys.forEach(ck => {
+            const combinedChildRows = [];
+            rows.forEach(r => {
+              if (r && typeof r === 'object' && Array.isArray(r[ck])) {
+                combinedChildRows.push(...r[ck]);
+              }
+            });
+            children.push(buildEmbeddedTree(ck, combinedChildRows, new Set(visited)));
+          });
+
+          return {
+            name,
+            children,
+            rowCount: rows ? rows.length : 0,
+            rows: rows || []
+          };
+        }
+
+        const currentRows = Array.isArray(sourceData) ? sourceData : (sourceData[currTable] || []);
+        const embeddedChildKeys = getEmbeddedChildKeys(currentRows);
+        if (embeddedChildKeys.length > 0) {
+          const embeddedTree = buildEmbeddedTree(currTable, currentRows);
+          if (embeddedTree.children.length > 0) {
+            return [embeddedTree];
+          }
+        }
+
+        // Helper 2: Check user-defined hierarchy definition if present
+        const defTextToUse = userDefText || (elements && elements.hierarchyInputText ? elements.hierarchyInputText.value : '');
+        if (defTextToUse && defTextToUse.trim()) {
+          try {
+            const parsedTree = parseHierarchyText(defTextToUse.trim());
+            if (parsedTree && parsedTree.length > 0) {
+              let matchCount = 0;
+              function checkMatch(nodes) {
+                if (!nodes) return;
+                nodes.forEach(n => {
+                  if (allTableKeys.includes(n.name) || (sourceData && n.name in sourceData)) matchCount++;
+                  if (n.children) checkMatch(n.children);
+                });
+              }
+              checkMatch(parsedTree);
+
+              if (matchCount > 0) {
+                function findSubNode(nodes, targetName) {
+                  if (!nodes) return null;
+                  for (let n of nodes) {
+                    if (n.name === targetName) return n;
+                    if (n.children) {
+                      const found = findSubNode(n.children, targetName);
+                      if (found) return found;
+                    }
+                  }
+                  return null;
+                }
+
+                const targetSub = (currTable && currTable !== parsedTree[0]?.name)
+                  ? findSubNode(parsedTree, currTable)
+                  : null;
+                const treeToUse = targetSub ? [targetSub] : parsedTree;
+
+                function enrichTreeWithCounts(nodes) {
+                  if (!nodes) return [];
+                  return nodes.map(node => {
+                    const rows = getEntityRowsFromSource(sourceData, node.name);
+                    return {
+                      ...node,
+                      rowCount: rows ? rows.length : 0,
+                      children: enrichTreeWithCounts(node.children || [])
+                    };
+                  });
+                }
+
+                return enrichTreeWithCounts(treeToUse);
+              }
+            }
+          } catch (e) {}
+        }
+
+        // Helper 3: Relational foreign key mapping across all dataset tables
+        if (allTableKeys.length > 1) {
+          const childToParent = new Map();
+
+          allTableKeys.forEach(tbl => {
+            const rows = sourceData[tbl];
+            if (!rows || rows.length === 0 || typeof rows[0] !== 'object') return;
+            const cols = Object.keys(rows[0]);
+
+            let bestParent = null;
+            let bestScore = -1;
+            let bestFk = null;
+            let bestPk = null;
+
+            for (let otherTbl of allTableKeys) {
+              if (otherTbl === tbl) continue;
+              const pClean = otherTbl.toLowerCase().replace(/s$/, '').replace(/^tbl_/, '').replace(/^appl_/, '');
+              const otherRows = sourceData[otherTbl];
+              const pCols = (otherRows && otherRows.length > 0 && typeof otherRows[0] === 'object')
+                ? Object.keys(otherRows[0])
+                : ['id'];
+
+              const directFks = [
+                `${otherTbl}_id`, `${otherTbl}Id`,
+                `${pClean}_id`, `${pClean}Id`,
+                `party_id`, `account_id`, `op_id`, `task_id`, `followup_id`,
+                `collateral_id`, `collateral_realestate_id`, `financialinfo_id`,
+                `appl_party_id`, `appl_account_id`, `op_loans_id`, `op_loan_id`, `op_contract_id`,
+                `application_id`, `applicationId`
+              ];
+
+              for (let fk of directFks) {
+                if (cols.includes(fk)) {
+                  let score = 10;
+                  if (fk === `${otherTbl}_id` || fk === `${otherTbl}Id`) score = 100;
+                  else if (tbl.startsWith(otherTbl)) score = 80;
+                  else if (fk !== 'application_id') score = 50;
+                  else score = 10;
+
+                  if (score > bestScore) {
+                    bestScore = score;
+                    bestParent = otherTbl;
+                    bestFk = fk;
+                    bestPk = pCols.includes('id') ? 'id' : (pCols.includes(fk) ? fk : pCols[0]);
+                  }
+                }
+              }
+            }
+
+            if (bestParent) {
+              childToParent.set(tbl, { parent: bestParent, childFk: bestFk, parentPk: bestPk });
+            }
+          });
+
+          let root = currTable;
+          if (!root || !allTableKeys.includes(root)) {
+            if (allTableKeys.includes('application')) root = 'application';
+            else if (allTableKeys.includes('orders')) root = 'orders';
+            else {
+              const rootCandidates = allTableKeys.filter(t => !childToParent.has(t) && t !== '_system');
+              root = rootCandidates[0] || allTableKeys[0];
+            }
+          }
+
+          function buildRelationalTree(tblName, visited = new Set()) {
+            if (visited.has(tblName)) return null;
+            visited.add(tblName);
+
+            const rows = sourceData[tblName] || [];
+            const directChildren = allTableKeys.filter(t => {
+              const rel = childToParent.get(t);
+              return rel && rel.parent === tblName;
+            });
+
+            const childNodes = [];
+            directChildren.forEach(cTbl => {
+              const cNode = buildRelationalTree(cTbl, new Set(visited));
+              if (cNode) {
+                const rel = childToParent.get(cTbl);
+                if (rel) cNode.mappings = [{ childField: rel.childFk, parentField: rel.parentPk }];
+                childNodes.push(cNode);
+              }
+            });
+
+            return {
+              name: tblName,
+              children: childNodes,
+              rowCount: rows.length
+            };
+          }
+
+          const relTree = buildRelationalTree(root);
+          if (relTree) {
+            return [relTree];
+          }
+        }
+
+        const singleRows = Array.isArray(sourceData) ? sourceData : (sourceData[currTable] || []);
+        return [{
+          name: currTable,
+          children: [],
+          rowCount: singleRows.length
+        }];
       }
 
       function autoDetectHierarchyFromData(data) {
         if (!data || typeof data !== 'object') return 'orders\n- order_items [order_id = id]\n- order_shipping [order_id = id]';
         if (Array.isArray(data)) return 'items';
 
-        const keys = Object.keys(data);
-        if (keys.length === 0) return 'orders\n- order_items [order_id = id]\n- order_shipping [order_id = id]';
-
-        const arrayKeys = keys.filter(k => Array.isArray(data[k]));
-        if (arrayKeys.length === 0) {
-          return keys.map((k, i) => i === 0 ? k : `- ${k}`).join('\n');
+        const tree = buildDatasetHierarchyTree(data);
+        if (!tree || tree.length === 0) {
+          const keys = Object.keys(data);
+          return keys.length > 0 ? keys.map((k, i) => i === 0 ? k : `- ${k}`).join('\n') : 'items';
         }
 
-        const rootKey = arrayKeys[0];
-        const childKeys = arrayKeys.slice(1);
-        const lines = [rootKey];
-
-        childKeys.forEach(ck => {
-          const parentMatch = childKeys.find(other => other !== ck && ck.startsWith(other));
-          if (parentMatch) {
-            const cleanParent = parentMatch.replace(/s$/, '');
-            lines.push(`  - ${ck} [${ck}_id = id]`);
-          } else {
-            const cleanRoot = rootKey.replace(/s$/, '');
-            lines.push(`- ${ck} [${cleanRoot}_id = id]`);
-          }
-        });
-
+        const lines = [];
+        function treeToText(nodes, indent = 0) {
+          nodes.forEach(n => {
+            const pad = '  '.repeat(indent);
+            const cond = (n.mappings && n.mappings.length > 0)
+              ? ` [${n.mappings.map(m => `${m.childField} = ${m.parentField}`).join(', ')}]`
+              : '';
+            if (indent === 0) {
+              lines.push(`${n.name}${cond}`);
+            } else {
+              lines.push(`${pad}- ${n.name}${cond}`);
+            }
+            if (n.children && n.children.length > 0) {
+              treeToText(n.children, indent + 1);
+            }
+          });
+        }
+        treeToText(tree, 0);
         return lines.join('\n');
       }
 
       elements.btnOpenHierarchy.addEventListener('click', () => {
-        elements.modalHierarchy.classList.add('active');
-        if (!elements.hierarchyInputText.value.trim()) {
-          const autoHier = autoDetectHierarchyFromData(state.left.data);
-          elements.hierarchyInputText.value = autoHier || `orders\n- order_items [order_id = id]\n- order_shipping [order_id = id]`;
-        }
-        updateHierarchyLivePreview(true);
+        runWithLoading('Opening Hierarchy Builder...', () => {
+          elements.modalHierarchy.classList.add('active');
+          if (!elements.hierarchyInputText.value.trim()) {
+            const autoHier = autoDetectHierarchyFromData(state.left.data);
+            elements.hierarchyInputText.value = autoHier || `orders\n- order_items [order_id = id]\n- order_shipping [order_id = id]`;
+          }
+          updateHierarchyLivePreview(true);
+        });
       });
 
       elements.btnCloseModalHierarchy.addEventListener('click', () => elements.modalHierarchy.classList.remove('active'));
@@ -3498,16 +4236,20 @@
 
       // Reload Tree Button
       elements.btnReloadHierarchy.addEventListener('click', () => {
-        updateHierarchyLivePreview(true);
-        showToast('Hierarchy tree & field mappings reloaded!', 'info');
+        runWithLoading('Reloading Hierarchy...', () => {
+          updateHierarchyLivePreview(true);
+          showToast('Hierarchy tree & field mappings reloaded!', 'info');
+        });
       });
 
       // Auto-Detect from Data Button
       elements.btnAutoDetectHierarchy.addEventListener('click', () => {
-        const detected = autoDetectHierarchyFromData(state.left.data);
-        elements.hierarchyInputText.value = detected;
-        updateHierarchyLivePreview(true);
-        showToast('Auto-detected hierarchy with field mappings!', 'success');
+        runWithLoading('Auto-detecting Hierarchy Relations...', () => {
+          const detected = autoDetectHierarchyFromData(state.left.data);
+          elements.hierarchyInputText.value = detected;
+          updateHierarchyLivePreview(true);
+          showToast('Auto-detected hierarchy with field mappings!', 'success');
+        });
       });
 
       // --- HIERARCHY PRESETS MANAGEMENT (FILE & LOCALSTORAGE) ---
@@ -3552,16 +4294,18 @@
             <span data-delete-hier-preset="${escapeHtml(k)}" title="Delete preset" style="color:var(--accent-danger); font-size:11px; padding:0 4px; cursor:pointer;" onclick="event.stopPropagation();">🗑️</span>
           `;
           item.addEventListener('click', () => {
-            const data = presets[k];
-            if (typeof data === 'string') {
-              elements.hierarchyInputText.value = data;
-            } else if (data && data.definition) {
-              elements.hierarchyInputText.value = data.definition;
-              if (data.supportMultiParent !== undefined) elements.hierMultiParentCheck.checked = data.supportMultiParent;
-            }
-            elements.hierarchyPresetsMenu.classList.remove('active');
-            updateHierarchyLivePreview(true);
-            showToast(`Loaded preset "${k}"`, 'success');
+            runWithLoading(`Loading Preset '${k}'...`, () => {
+              const data = presets[k];
+              if (typeof data === 'string') {
+                elements.hierarchyInputText.value = data;
+              } else if (data && data.definition) {
+                elements.hierarchyInputText.value = data.definition;
+                if (data.supportMultiParent !== undefined) elements.hierMultiParentCheck.checked = data.supportMultiParent;
+              }
+              elements.hierarchyPresetsMenu.classList.remove('active');
+              updateHierarchyLivePreview(true);
+              showToast(`Loaded preset "${k}"`, 'success');
+            });
           });
 
           const delBtn = item.querySelector('[data-delete-hier-preset]');
@@ -3612,29 +4356,31 @@
         const reader = new FileReader();
         reader.onload = (e) => {
           const content = e.target.result;
-          try {
-            if (file.name.endsWith('.json') || content.trim().startsWith('{')) {
-              const parsed = JSON.parse(content);
-              if (parsed.definition) {
-                elements.hierarchyInputText.value = parsed.definition;
-                if (parsed.supportMultiParent !== undefined) elements.hierMultiParentCheck.checked = parsed.supportMultiParent;
-              } else if (Array.isArray(parsed.hierarchy)) {
-                elements.hierarchyInputText.value = parsed.hierarchy.join('\n');
-              } else if (typeof parsed === 'string') {
-                elements.hierarchyInputText.value = parsed;
+          runWithLoading(`Loading from ${file.name}...`, () => {
+            try {
+              if (file.name.endsWith('.json') || content.trim().startsWith('{')) {
+                const parsed = JSON.parse(content);
+                if (parsed.definition) {
+                  elements.hierarchyInputText.value = parsed.definition;
+                  if (parsed.supportMultiParent !== undefined) elements.hierMultiParentCheck.checked = parsed.supportMultiParent;
+                } else if (Array.isArray(parsed.hierarchy)) {
+                  elements.hierarchyInputText.value = parsed.hierarchy.join('\n');
+                } else if (typeof parsed === 'string') {
+                  elements.hierarchyInputText.value = parsed;
+                } else {
+                  elements.hierarchyInputText.value = content;
+                }
               } else {
                 elements.hierarchyInputText.value = content;
               }
-            } else {
+              updateHierarchyLivePreview(true);
+              showToast(`Loaded preset from "${file.name}"!`, 'success');
+            } catch (err) {
               elements.hierarchyInputText.value = content;
+              updateHierarchyLivePreview(true);
+              showToast(`Loaded preset text from "${file.name}"!`, 'success');
             }
-            updateHierarchyLivePreview(true);
-            showToast(`Loaded preset from "${file.name}"!`, 'success');
-          } catch (err) {
-            elements.hierarchyInputText.value = content;
-            updateHierarchyLivePreview(true);
-            showToast(`Loaded preset text from "${file.name}"!`, 'success');
-          }
+          });
         };
         reader.readAsText(file);
       }
@@ -3648,14 +4394,16 @@
       elements.hierarchyPresetsMenu.querySelectorAll('.dropdown-item[data-hier-preset]').forEach(item => {
         item.addEventListener('click', () => {
           const p = item.dataset.hierPreset;
-          if (p === 'ecommerce') {
-            elements.hierarchyInputText.value = `orders\n- order_items [order_id = id]\n- order_shipping [order_id = id]`;
-            setPaneData('left', ECOMMERCE_RELATIONAL_DATA);
-          } else if (p === 'org') {
-            elements.hierarchyInputText.value = `company\n- departments [company_id = id]\n  - employees [department_id = id]`;
-          }
-          elements.hierarchyPresetsMenu.classList.remove('active');
-          updateHierarchyLivePreview(true);
+          runWithLoading(`Loading '${p}' preset...`, () => {
+            if (p === 'ecommerce') {
+              elements.hierarchyInputText.value = `orders\n- order_items [order_id = id]\n- order_shipping [order_id = id]`;
+              setPaneData('left', ECOMMERCE_RELATIONAL_DATA);
+            } else if (p === 'org') {
+              elements.hierarchyInputText.value = `company\n- departments [company_id = id]\n  - employees [department_id = id]`;
+            }
+            elements.hierarchyPresetsMenu.classList.remove('active');
+            updateHierarchyLivePreview(true);
+          });
         });
       });
 
@@ -3721,25 +4469,29 @@
       });
 
       elements.btnApplyHierarchyLeft.addEventListener('click', () => {
-        try {
-          const parsed = JSON.parse(elements.hierarchyResultPreview.value);
-          setPaneData('left', parsed);
-          elements.modalHierarchy.classList.remove('active');
-          showToast('Applied hierarchy to Left Pane!', 'success');
-        } catch (e) {
-          showToast('Invalid JSON result to apply', 'error');
-        }
+        runWithLoading('Applying Hierarchy to Left Pane...', () => {
+          try {
+            const parsed = JSON.parse(elements.hierarchyResultPreview.value);
+            setPaneData('left', parsed);
+            elements.modalHierarchy.classList.remove('active');
+            showToast('Applied hierarchy to Left Pane!', 'success');
+          } catch (e) {
+            showToast('Invalid JSON result to apply', 'error');
+          }
+        });
       });
 
       elements.btnApplyHierarchyRight.addEventListener('click', () => {
-        try {
-          const parsed = JSON.parse(elements.hierarchyResultPreview.value);
-          setPaneData('right', parsed);
-          elements.modalHierarchy.classList.remove('active');
-          showToast('Applied hierarchy to Right Pane!', 'success');
-        } catch (e) {
-          showToast('Invalid JSON result to apply', 'error');
-        }
+        runWithLoading('Applying Hierarchy to Right Pane...', () => {
+          try {
+            const parsed = JSON.parse(elements.hierarchyResultPreview.value);
+            setPaneData('right', parsed);
+            elements.modalHierarchy.classList.remove('active');
+            showToast('Applied hierarchy to Right Pane!', 'success');
+          } catch (e) {
+            showToast('Invalid JSON result to apply', 'error');
+          }
+        });
       });
 
       // --- POWER TOOLS DROPDOWN ACTIONS ---
@@ -4000,7 +4752,7 @@
               columns.add('Value');
             }
           });
-          const colList = Array.from(columns);
+          const colList = sortEntityColumns(Array.from(columns), table.rows);
 
           // Apply table sorting if configured
           let sortedRows = [...table.rows];
@@ -4320,9 +5072,86 @@
         sortAsc: true,
         selectedCellPath: '$',
         selectedCellVal: '',
+        selectedRowIdx: null,
+        selectedCol: null,
+        fullJsonPath: '$',
         flattenObjects: false,
         breadcrumbs: [] // [ { name, rows, path, rawRows } ]
       };
+
+      function findFullJsonPathInRoot(rootData, targetTableName, rowIdx = null, colName = null) {
+        const rowPart = rowIdx !== null ? `[${rowIdx}]` : '';
+        const colPart = colName ? (rowIdx !== null ? `.${colName}` : `[*].${colName}`) : '';
+
+        if (!rootData) {
+          return `$.${targetTableName}${rowPart}${colPart}`;
+        }
+
+        // 1. If active breadcrumb trail has deep path context
+        const crumbs = tableStudioState.breadcrumbs;
+        if (crumbs && crumbs.length > 0) {
+          const activeCrumb = crumbs[crumbs.length - 1];
+          if (activeCrumb && activeCrumb.path && (activeCrumb.name === targetTableName || activeCrumb.path.includes(targetTableName))) {
+            let base = activeCrumb.path;
+            if (rowIdx !== null && colName) {
+              return `${base}[${rowIdx}].${colName}`;
+            } else if (rowIdx !== null) {
+              return `${base}[${rowIdx}]`;
+            } else if (colName) {
+              return `${base}[*].${colName}`;
+            }
+            return base;
+          }
+        }
+
+        // 2. Deep recursive search in rootData
+        function searchPath(curr, currentPath, visited = new Set()) {
+          if (!curr || typeof curr !== 'object' || visited.has(curr)) return null;
+          visited.add(curr);
+
+          if (Array.isArray(curr)) {
+            for (let i = 0; i < curr.length; i++) {
+              const item = curr[i];
+              if (item && typeof item === 'object') {
+                if (item[targetTableName] !== undefined) {
+                  return `${currentPath}[${i}].${targetTableName}`;
+                }
+                for (let k in item) {
+                  if (typeof item[k] === 'object' && item[k] !== null) {
+                    const res = searchPath(item[k], `${currentPath}[${i}].${k}`, visited);
+                    if (res) return res;
+                  }
+                }
+              }
+            }
+          } else {
+            if (curr[targetTableName] !== undefined) {
+              return `${currentPath}.${targetTableName}`;
+            }
+            for (let k in curr) {
+              if (typeof curr[k] === 'object' && curr[k] !== null) {
+                const res = searchPath(curr[k], `${currentPath}.${k}`, visited);
+                if (res) return res;
+              }
+            }
+          }
+          return null;
+        }
+
+        let foundPath = searchPath(rootData, '$');
+        if (!foundPath) {
+          foundPath = `$.${targetTableName}`;
+        }
+
+        if (rowIdx !== null && colName) {
+          return `${foundPath}[${rowIdx}].${colName}`;
+        } else if (rowIdx !== null) {
+          return `${foundPath}[${rowIdx}]`;
+        } else if (colName) {
+          return `${foundPath}[*].${colName}`;
+        }
+        return foundPath;
+      }
 
       function resolvePathData(root, path) {
         if (!root || !path) return root;
@@ -4330,13 +5159,49 @@
           let clean = path.replace(/^\$\.?/, '');
           if (!clean) return root;
           let tokens = clean.match(/[^.\[\]"']+/g);
-          if (!tokens) return root;
+          if (!tokens || tokens.length === 0) return root;
+
+          // 1. Direct path traversal from root
           let curr = root;
+          let failed = false;
           for (let tok of tokens) {
-            if (curr === undefined || curr === null) return null;
+            if (curr === undefined || curr === null) {
+              failed = true;
+              break;
+            }
             curr = curr[tok];
           }
-          return curr;
+          if (!failed && curr !== undefined && curr !== null) {
+            return curr;
+          }
+
+          // 2. Deep search if direct traversal failed
+          const startToken = tokens[0];
+          const remainingTokens = tokens.slice(1);
+          const candidateParents = getEntityRowsFromSource(root, startToken);
+          if (candidateParents && candidateParents.length > 0) {
+            let subCurr = candidateParents;
+            let subFailed = false;
+            for (let tok of remainingTokens) {
+              if (subCurr === undefined || subCurr === null) {
+                subFailed = true;
+                break;
+              }
+              subCurr = subCurr[tok];
+            }
+            if (!subFailed && subCurr !== undefined && subCurr !== null) {
+              return subCurr;
+            }
+          }
+
+          // 3. Fallback: search last token deeply
+          const lastToken = tokens[tokens.length - 1];
+          const deepLast = getEntityRowsFromSource(root, lastToken);
+          if (deepLast && deepLast.length > 0) {
+            return deepLast;
+          }
+
+          return null;
         } catch (e) {
           return null;
         }
@@ -4370,11 +5235,12 @@
         } else {
           const allTables = extractTablesFromData(p.data);
           const targetTable = allTables.find(t => t.name === tableName);
-          if (!targetTable) {
-            showToast(`Table "${tableName}" not found`, 'error');
-            return;
+          if (targetTable) {
+            rows = targetTable.rows || [];
+          } else {
+            rows = getEntityRowsFromSource(p.data, tableName);
+            if (!rows) rows = [];
           }
-          rows = targetTable.rows || [];
         }
 
         const fullPath = customPath || `$.${tableName}`;
@@ -4396,14 +5262,22 @@
         tableStudioState.sortAsc = true;
         tableStudioState.selectedCellPath = fullPath;
         tableStudioState.selectedCellVal = '';
+        tableStudioState.selectedRowIdx = null;
+        tableStudioState.selectedCol = null;
+        tableStudioState.fullJsonPath = findFullJsonPathInRoot(p.data, tableName);
 
-        // Extract columns
+        if (elements.studioSelectedPath) {
+          elements.studioSelectedPath.textContent = tableStudioState.fullJsonPath || fullPath;
+          elements.studioSelectedPath.setAttribute('title', `Click to copy full path: ${tableStudioState.fullJsonPath || fullPath}`);
+        }
+
+        // Extract columns sorted by: id > application_id > *_seq > [A-Z fields] > [child tables]
         const cols = new Set();
         tableStudioState.rows.forEach(r => {
           if (r !== null && typeof r === 'object') Object.keys(r).forEach(k => cols.add(k));
           else cols.add('Value');
         });
-        tableStudioState.columns = Array.from(cols);
+        tableStudioState.columns = sortEntityColumns(Array.from(cols), tableStudioState.rows);
         tableStudioState.visibleColumns = new Set(tableStudioState.columns);
 
         // Header & Breadcrumb info
@@ -4416,6 +5290,7 @@
         renderStudioBreadcrumbs();
         renderStudioColumnVisibilityMenu();
         renderStudioTable();
+        renderStudioSidebar();
 
         elements.modalTableStudio.classList.add('active');
       }
@@ -4602,11 +5477,11 @@
               if (val.length === 0) {
                 cellContent = '<span style="color:var(--text-dim); font-size:11px;">[0 items]</span>';
               } else {
-                cellContent = `<button class="btn btn-sm btn-ghost" data-drilldown-path="${escapeHtml(cellPath)}" data-drilldown-name="${escapeHtml(col)}" data-side="${tableStudioState.side}" onclick="event.stopPropagation();" style="background:rgba(56,139,253,0.14); color:var(--accent-primary); border:1px solid rgba(56,139,253,0.3); font-size:11px; padding:2px 7px; border-radius:5px; font-weight:600; cursor:pointer;" title="Click to open nested '${escapeHtml(col)}' sub-table with ${val.length} items">📦 [${val.length} items] ↗</button>`;
+                cellContent = `<button class="btn btn-sm btn-ghost" data-drilldown-path="${escapeHtml(cellPath)}" data-drilldown-name="${escapeHtml(col)}" data-drilldown-col="${escapeHtml(col)}" data-drilldown-row-idx="${idx}" data-side="${tableStudioState.side}" onclick="event.stopPropagation();" style="background:rgba(56,139,253,0.14); color:var(--accent-primary); border:1px solid rgba(56,139,253,0.3); font-size:11px; padding:2px 7px; border-radius:5px; font-weight:600; cursor:pointer;" title="Click to open nested '${escapeHtml(col)}' sub-table with ${val.length} items">📦 [${val.length} items] ↗</button>`;
               }
             } else if (typeof val === 'object' && val !== null) {
               const keysCount = Object.keys(val).length;
-              cellContent = `<button class="btn btn-sm btn-ghost" data-drilldown-path="${escapeHtml(cellPath)}" data-drilldown-name="${escapeHtml(col)}" data-side="${tableStudioState.side}" onclick="event.stopPropagation();" style="background:rgba(187,128,255,0.14); color:var(--accent-purple); border:1px solid rgba(187,128,255,0.3); font-size:11px; padding:2px 7px; border-radius:5px; font-weight:600; cursor:pointer;" title="Click to inspect nested '${escapeHtml(col)}' (${keysCount} properties)">🏷️ {${keysCount} props} ↗</button>`;
+              cellContent = `<button class="btn btn-sm btn-ghost" data-drilldown-path="${escapeHtml(cellPath)}" data-drilldown-name="${escapeHtml(col)}" data-drilldown-col="${escapeHtml(col)}" data-drilldown-row-idx="${idx}" data-side="${tableStudioState.side}" onclick="event.stopPropagation();" style="background:rgba(187,128,255,0.14); color:var(--accent-purple); border:1px solid rgba(187,128,255,0.3); font-size:11px; padding:2px 7px; border-radius:5px; font-weight:600; cursor:pointer;" title="Click to inspect nested '${escapeHtml(col)}' (${keysCount} properties)">🏷️ {${keysCount} props} ↗</button>`;
             } else if (typeof val === 'boolean') {
               cellContent = `<span style="color:var(--json-boolean); font-weight:600;">${val}</span>`;
             } else if (typeof val === 'number') {
@@ -4621,7 +5496,7 @@
               }
             }
 
-            html += `<td class="cell-interactive" data-studio-cell-path="${escapeHtml(cellPath)}" data-studio-cell-val="${escapeHtml(typeof val === 'object' ? JSON.stringify(val) : String(val))}" title="Click to copy JSON Path: ${escapeHtml(cellPath)}">${cellContent}</td>`;
+            html += `<td class="cell-interactive" data-studio-cell-path="${escapeHtml(cellPath)}" data-studio-row-idx="${idx}" data-studio-col="${escapeHtml(col)}" data-studio-cell-val="${escapeHtml(typeof val === 'object' ? JSON.stringify(val) : String(val))}" title="Click to copy JSON Path: ${escapeHtml(cellPath)}">${cellContent}</td>`;
           });
           html += `</tr>`;
         });
@@ -4667,13 +5542,25 @@
             if (e.target.closest('button')) return;
             const path = td.dataset.studioCellPath;
             const val = td.dataset.studioCellVal;
+            const rowIdx = td.dataset.studioRowIdx !== undefined ? parseInt(td.dataset.studioRowIdx, 10) : null;
+            const col = td.dataset.studioCol;
+
             tableStudioState.selectedCellPath = path;
             tableStudioState.selectedCellVal = val;
-            elements.studioSelectedPath.textContent = path;
+            tableStudioState.selectedRowIdx = rowIdx;
+            tableStudioState.selectedCol = col;
+
+            const rootData = state[tableStudioState.side]?.data;
+            const fullPath = findFullJsonPathInRoot(rootData, tableStudioState.tableName, rowIdx, col);
+            tableStudioState.fullJsonPath = fullPath;
+
+            elements.studioSelectedPath.textContent = fullPath || path;
+            elements.studioSelectedPath.setAttribute('title', `Click to copy full path: ${fullPath || path}`);
+
             wrapper.querySelectorAll('td.cell-selected').forEach(c => c.classList.remove('cell-selected'));
             td.classList.add('cell-selected');
-            navigator.clipboard.writeText(path);
-            showToast(`Copied JSON Path: ${path}`, 'success');
+            navigator.clipboard.writeText(fullPath || path);
+            showToast(`Copied JSON Path: ${fullPath || path}`, 'success');
           });
         });
 
@@ -4683,7 +5570,24 @@
             e.stopPropagation();
             const path = btn.dataset.drilldownPath;
             const name = btn.dataset.drilldownName;
+            const col = btn.dataset.drilldownCol;
+            const rowIdx = btn.dataset.drilldownRowIdx !== undefined ? parseInt(btn.dataset.drilldownRowIdx, 10) : null;
             const side = btn.dataset.side || tableStudioState.side;
+
+            // Direct in-memory lookup from current filteredRows
+            if (rowIdx !== null && filteredRows[rowIdx] && col && filteredRows[rowIdx][col] !== undefined && filteredRows[rowIdx][col] !== null) {
+              const targetData = filteredRows[rowIdx][col];
+              let rows = [];
+              if (Array.isArray(targetData)) {
+                rows = targetData;
+              } else if (typeof targetData === 'object') {
+                rows = [targetData];
+              }
+              openTableStudio(side, name, rows, path);
+              showToast(`Drilled into nested '${name}' (${rows.length} rows)!`, 'info');
+              return;
+            }
+
             handleDrilldownClick(side, path, name);
           });
         });
@@ -4691,7 +5595,14 @@
 
       function handleDrilldownClick(side, path, name) {
         const rootData = state[side].data;
-        const targetData = resolvePathData(rootData, path);
+        let targetData = resolvePathData(rootData, path);
+        if (targetData === undefined || targetData === null) {
+          const deepRows = getEntityRowsFromSource(rootData, name);
+          if (deepRows && deepRows.length > 0) {
+            targetData = deepRows;
+          }
+        }
+
         if (targetData === undefined || targetData === null) {
           showToast(`Cannot locate data at ${path}`, 'error');
           return;
@@ -4746,13 +5657,233 @@
           if (r !== null && typeof r === 'object') Object.keys(r).forEach(k => cols.add(k));
           else cols.add('Value');
         });
-        tableStudioState.columns = Array.from(cols);
+        tableStudioState.columns = sortEntityColumns(Array.from(cols), tableStudioState.rows);
         tableStudioState.visibleColumns = new Set(tableStudioState.columns);
 
         renderStudioColumnVisibilityMenu();
         renderStudioTable();
         showToast(tableStudioState.flattenObjects ? 'Flattened 1-level nested object properties into columns!' : 'Restored unflattened table view', 'info');
       });
+
+      // --- TABLE STUDIO DATASET HIERARCHY SIDEBAR ENGINE ---
+      let studioSideFilterQuery = '';
+      let studioSideHideZero = false;
+      let studioSidebarCollapsed = false;
+
+      function renderStudioSidebar() {
+        const side = tableStudioState.side || 'left';
+        const sourceData = state[side]?.data;
+        const container = elements.studioSidebarTreeContainer;
+        if (!container || !sourceData) return;
+        container.innerHTML = '';
+
+        const tree = buildDatasetHierarchyTree(sourceData, null);
+        if (!tree || tree.length === 0) {
+          container.innerHTML = '<div style="padding:12px; color:var(--text-dim); font-size:11.5px; text-align:center;">No hierarchical relationships detected in this dataset.</div>';
+          if (elements.studioSidebarStatsBadge) elements.studioSidebarStatsBadge.textContent = '0 tables';
+          return;
+        }
+
+        // Count unique tables and records in hierarchy
+        let totalTables = 0;
+        let visibleTables = 0;
+        let totalRecords = 0;
+        const countedTables = new Set();
+
+        function countStats(nodes) {
+          if (!nodes) return;
+          nodes.forEach(n => {
+            const count = n.rowCount !== undefined ? n.rowCount : getEntityRowsFromSource(sourceData, n.name).length;
+            const subtreeCount = getNodeSubtreeRowCount(n, sourceData);
+            if (!countedTables.has(n.name)) {
+              countedTables.add(n.name);
+              totalTables++;
+              totalRecords += count;
+              if (!studioSideHideZero || subtreeCount > 0) {
+                visibleTables++;
+              }
+            }
+            if (n.children) countStats(n.children);
+          });
+        }
+        countStats(tree);
+
+        if (elements.studioSidebarStatsBadge) {
+          if (studioSideHideZero) {
+            elements.studioSidebarStatsBadge.textContent = `${visibleTables} / ${totalTables} tables`;
+          } else {
+            elements.studioSidebarStatsBadge.textContent = `${totalTables} tables`;
+          }
+        }
+
+        // Toggle button states in sidebar
+        if (elements.btnStudioSideShowAll) {
+          elements.btnStudioSideShowAll.classList.toggle('active', !studioSideHideZero);
+        }
+        if (elements.btnStudioSideHideZero) {
+          elements.btnStudioSideHideZero.classList.toggle('active', studioSideHideZero);
+        }
+
+        // Render clean interactive nodes without Root / Child text!
+        renderStudioSidebarTree(tree, container, 0, sourceData, tableStudioState.tableName, studioSideFilterQuery, studioSideHideZero);
+      }
+
+      function checkDescendantMatch(node, query) {
+        if (!node || !node.children) return false;
+        return node.children.some(c => c.name.toLowerCase().includes(query.toLowerCase()) || checkDescendantMatch(c, query));
+      }
+
+      function renderStudioSidebarTree(nodes, container, depth = 0, sourceData = null, selectedTable = '', filterQuery = '', hideZero = false) {
+        if (!nodes || nodes.length === 0) return;
+
+        nodes.forEach(node => {
+          const rows = getEntityRowsFromSource(sourceData, node.name);
+          const rowCount = node.rowCount !== undefined ? node.rowCount : (rows ? rows.length : 0);
+          const subtreeCount = getNodeSubtreeRowCount(node, sourceData);
+
+          // If hideZero is enabled and neither this node nor any of its descendants have rows > 0, skip
+          if (hideZero && subtreeCount === 0) {
+            return;
+          }
+
+          // Filter by search query if provided
+          if (filterQuery) {
+            const matchesSelf = node.name.toLowerCase().includes(filterQuery.toLowerCase());
+            const matchesDescendant = checkDescendantMatch(node, filterQuery);
+            if (!matchesSelf && !matchesDescendant) return;
+          }
+
+          const isSelected = selectedTable && (node.name === selectedTable);
+          const isZero = rowCount === 0;
+
+          const item = document.createElement('div');
+          item.className = `studio-tree-item ${isSelected ? 'active' : ''} ${isZero ? 'zero-rows' : ''}`;
+          item.style.paddingLeft = `${depth * 14 + 8}px`;
+
+          let countBadge = `<span class="studio-tree-badge ${isZero ? 'badge-zero' : 'badge-count'}">${rowCount}</span>`;
+
+          let condBadge = '';
+          if (node.mappings && node.mappings.length > 0) {
+            const condText = node.mappings.map(m => `${m.childField}=${m.parentField}`).join(', ');
+            condBadge = `<span class="studio-tree-cond" title="Mapping: ${escapeHtml(condText)}">${escapeHtml(condText)}</span>`;
+          }
+
+          // Clean icon without words Root or Child!
+          const icon = depth === 0 ? '📁' : '📄';
+          const fullTitle = `${node.name}${rowCount !== undefined ? ` • (${rowCount} records)` : ''}${node.mappings && node.mappings.length > 0 ? `\nRelation: ${node.mappings.map(m => `${m.childField} = ${m.parentField}`).join(', ')}` : ''}`;
+
+          item.setAttribute('title', fullTitle);
+          item.innerHTML = `
+            <div style="display:flex; align-items:center; gap:6px; flex:1; min-width:0;" title="${escapeHtml(fullTitle)}">
+              <span class="studio-tree-icon">${icon}</span>
+              <span class="studio-tree-name" title="${escapeHtml(fullTitle)}">${escapeHtml(node.name)}</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:4px; flex-shrink:0;">
+              ${condBadge}
+              ${countBadge}
+            </div>
+          `;
+
+          item.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (tableStudioState.tableName !== node.name) {
+              const nodeRows = (node.rows && Array.isArray(node.rows)) ? node.rows : getEntityRowsFromSource(sourceData, node.name);
+              openTableStudio(tableStudioState.side || 'left', node.name, nodeRows);
+            }
+          });
+
+          container.appendChild(item);
+
+          if (node.children && node.children.length > 0) {
+            renderStudioSidebarTree(node.children, container, depth + 1, sourceData, selectedTable, filterQuery, hideZero);
+          }
+        });
+      }
+
+      // Sidebar Event Listeners & Draggable Resizing
+      let isStudioDragging = false;
+      let studioStartWidth = 320;
+      let studioStartX = 0;
+
+      if (elements.studioSplitter && elements.studioSidebar) {
+        try {
+          const savedWidth = localStorage.getItem('json_studio_sidebar_width');
+          if (savedWidth) {
+            const w = parseInt(savedWidth, 10);
+            if (w >= 180 && w <= 950) {
+              elements.studioSidebar.style.width = `${w}px`;
+            }
+          }
+        } catch (e) {}
+
+        elements.studioSplitter.addEventListener('mousedown', (e) => {
+          isStudioDragging = true;
+          studioStartX = e.clientX;
+          studioStartWidth = elements.studioSidebar.getBoundingClientRect().width;
+          elements.studioSplitter.classList.add('dragging');
+          document.body.style.cursor = 'col-resize';
+          document.body.style.userSelect = 'none';
+        });
+
+        window.addEventListener('mousemove', (e) => {
+          if (!isStudioDragging) return;
+          const delta = e.clientX - studioStartX;
+          const newWidth = Math.max(180, Math.min(950, studioStartWidth + delta));
+          elements.studioSidebar.style.width = `${newWidth}px`;
+        });
+
+        window.addEventListener('mouseup', () => {
+          if (isStudioDragging) {
+            isStudioDragging = false;
+            elements.studioSplitter.classList.remove('dragging');
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+            const finalWidth = parseInt(elements.studioSidebar.style.width, 10);
+            if (finalWidth) {
+              try { localStorage.setItem('json_studio_sidebar_width', String(finalWidth)); } catch(e){}
+            }
+          }
+        });
+      }
+
+      if (elements.btnStudioToggleSidebar) {
+        elements.btnStudioToggleSidebar.addEventListener('click', () => {
+          studioSidebarCollapsed = !studioSidebarCollapsed;
+          if (elements.studioSidebar) {
+            elements.studioSidebar.style.display = studioSidebarCollapsed ? 'none' : 'flex';
+          }
+          if (elements.studioSplitter) {
+            elements.studioSplitter.style.display = studioSidebarCollapsed ? 'none' : 'block';
+          }
+          if (elements.studioSidebarToggleText) {
+            elements.studioSidebarToggleText.textContent = studioSidebarCollapsed ? 'Show Sidebar' : 'Sidebar';
+          }
+          if (elements.btnStudioToggleSidebar) {
+            elements.btnStudioToggleSidebar.classList.toggle('btn-primary', !studioSidebarCollapsed);
+          }
+        });
+      }
+
+      if (elements.studioSidebarFilterInput) {
+        elements.studioSidebarFilterInput.addEventListener('input', (e) => {
+          studioSideFilterQuery = e.target.value.trim();
+          renderStudioSidebar();
+        });
+      }
+
+      if (elements.btnStudioSideShowAll) {
+        elements.btnStudioSideShowAll.addEventListener('click', () => {
+          studioSideHideZero = false;
+          renderStudioSidebar();
+        });
+      }
+
+      if (elements.btnStudioSideHideZero) {
+        elements.btnStudioSideHideZero.addEventListener('click', () => {
+          studioSideHideZero = true;
+          renderStudioSidebar();
+        });
+      }
 
       // Dropdown Toggles
       elements.btnStudioQueryMenu.addEventListener('click', (e) => {
@@ -4923,16 +6054,32 @@
         showToast('Copied field names per line!', 'success');
       });
 
-      // Copy Selected Path & Footer button
+      // Copy Selected Path & Footer buttons
       elements.studioSelectedPath.addEventListener('click', () => {
-        navigator.clipboard.writeText(tableStudioState.selectedCellPath);
-        showToast(`Copied JSON Path: ${tableStudioState.selectedCellPath}`, 'success');
+        const fullPath = tableStudioState.fullJsonPath || tableStudioState.selectedCellPath;
+        navigator.clipboard.writeText(fullPath);
+        showToast(`Copied Full JSON Path: ${fullPath}`, 'success');
       });
 
       elements.studioBtnCopySelectedPath.addEventListener('click', () => {
-        navigator.clipboard.writeText(tableStudioState.selectedCellPath);
-        showToast(`Copied JSON Path: ${tableStudioState.selectedCellPath}`, 'success');
+        const path = tableStudioState.selectedCellPath || `$.${tableStudioState.tableName}`;
+        navigator.clipboard.writeText(path);
+        showToast(`Copied Path: ${path}`, 'success');
       });
+
+      if (elements.studioBtnCopyFullPath) {
+        elements.studioBtnCopyFullPath.addEventListener('click', () => {
+          const rootData = state[tableStudioState.side]?.data;
+          const fullPath = tableStudioState.fullJsonPath || findFullJsonPathInRoot(
+            rootData,
+            tableStudioState.tableName,
+            tableStudioState.selectedRowIdx,
+            tableStudioState.selectedCol
+          );
+          navigator.clipboard.writeText(fullPath);
+          showToast(`Copied Full JSON Path: ${fullPath}`, 'success');
+        });
+      }
 
       // --- DIFF VIEW ENGINE ---
       function renderDiffView() {
@@ -5209,79 +6356,135 @@
       // --- EVENT HANDLERS & WIRING ---
 
       // View Tab Switching (Tree, Code, Table, Diff)
-      document.querySelectorAll('.pane-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-          const side = tab.dataset.pane;
-          const view = tab.dataset.view;
-          state[side].view = view;
+      function switchView(side, view, isInitial = false) {
+        state[side].view = view;
 
-          const paneElem = side === 'left' ? elements.paneLeft : elements.paneRight;
-          paneElem.querySelectorAll('.pane-tab').forEach(t => t.classList.remove('active'));
-          tab.classList.add('active');
+        const paneElem = side === 'left' ? elements.paneLeft : elements.paneRight;
+        paneElem.querySelectorAll('.pane-tab').forEach(t => {
+          t.classList.toggle('active', t.dataset.view === view);
+        });
 
-          const isLeft = side === 'left';
-          const treeView = isLeft ? elements.leftTreeView : elements.rightTreeView;
-          const codeView = isLeft ? elements.leftCodeView : elements.rightCodeView;
-          const tableView = isLeft ? elements.leftTableView : elements.rightTableView;
-          const diffView = elements.rightDiffView;
+        const isLeft = side === 'left';
+        const treeView = isLeft ? elements.leftTreeView : elements.rightTreeView;
+        const codeView = isLeft ? elements.leftCodeView : elements.rightCodeView;
+        const tableView = isLeft ? elements.leftTableView : elements.rightTableView;
+        const diffView = elements.rightDiffView;
 
+        const executeSwitch = () => {
           treeView.style.display = view === 'tree' ? 'block' : 'none';
           codeView.style.display = view === 'code' ? 'flex' : 'none';
           tableView.style.display = view === 'table' ? 'block' : 'none';
           if (!isLeft && diffView) {
             diffView.style.display = view === 'diff' ? 'block' : 'none';
           }
-
           renderPane(side);
+          saveSessionToLocalStorage();
+        };
+
+        if (!isInitial && (view === 'tree' || view === 'table' || view === 'diff')) {
+          runWithLoading(`Switching to ${view.toUpperCase()} view...`, executeSwitch);
+        } else {
+          executeSwitch();
+        }
+      }
+
+      document.querySelectorAll('.pane-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          const side = tab.dataset.pane;
+          const view = tab.dataset.view;
+          switchView(side, view);
         });
       });
 
-      // Textarea inputs
+      // Textarea inputs with auto-save
       elements.leftCodeTextarea.addEventListener('input', () => {
         setPaneText('left', elements.leftCodeTextarea.value, false);
         updateLineNumbers('left');
         updateStatusBar('left');
+        saveSessionToLocalStorage();
+      });
+      elements.leftCodeTextarea.addEventListener('change', () => {
+        saveSessionImmediately();
+      });
+      elements.leftCodeTextarea.addEventListener('blur', () => {
+        saveSessionImmediately();
       });
 
       elements.rightCodeTextarea.addEventListener('input', () => {
         setPaneText('right', elements.rightCodeTextarea.value, false);
         updateLineNumbers('right');
         updateStatusBar('right');
+        saveSessionToLocalStorage();
       });
+      elements.rightCodeTextarea.addEventListener('change', () => {
+        saveSessionImmediately();
+      });
+      elements.rightCodeTextarea.addEventListener('blur', () => {
+        saveSessionImmediately();
+      });
+
+      if (elements.hierarchyInputText) {
+        elements.hierarchyInputText.addEventListener('input', () => {
+          saveSessionToLocalStorage();
+        });
+        elements.hierarchyInputText.addEventListener('blur', () => {
+          saveSessionImmediately();
+        });
+      }
 
       // Format & Minify Buttons
       elements.btnLeftFormat.addEventListener('click', () => {
-        if (state.left.data) setPaneData('left', state.left.data);
+        if (state.left.data) {
+          runWithLoading('Formatting Left JSON...', () => {
+            setPaneData('left', state.left.data);
+          });
+        }
       });
       elements.btnLeftMinify.addEventListener('click', () => {
         if (state.left.data) {
-          state.left.text = JSON.stringify(state.left.data);
-          renderPane('left');
+          runWithLoading('Minifying Left JSON...', () => {
+            state.left.text = JSON.stringify(state.left.data);
+            renderPane('left');
+            saveSessionToLocalStorage();
+          });
         }
       });
       elements.btnRightFormat.addEventListener('click', () => {
-        if (state.right.data) setPaneData('right', state.right.data);
+        if (state.right.data) {
+          runWithLoading('Formatting Right JSON...', () => {
+            setPaneData('right', state.right.data);
+          });
+        }
       });
       elements.btnRightMinify.addEventListener('click', () => {
         if (state.right.data) {
-          state.right.text = JSON.stringify(state.right.data);
-          renderPane('right');
+          runWithLoading('Minifying Right JSON...', () => {
+            state.right.text = JSON.stringify(state.right.data);
+            renderPane('right');
+            saveSessionToLocalStorage();
+          });
         }
       });
 
       // Bridge Buttons
       elements.btnBridgeCopyRight.addEventListener('click', () => {
-        setPaneData('right', state.left.data);
-        showToast('Transferred Left JSON ➔ Right Pane', 'success');
+        runWithLoading('Transferring JSON...', () => {
+          setPaneData('right', state.left.data);
+          showToast('Transferred Left JSON ➔ Right Pane', 'success');
+        });
       });
       elements.btnBridgeCopyLeft.addEventListener('click', () => {
-        setPaneData('left', state.right.data);
-        showToast('Transferred Right JSON ➔ Left Pane', 'success');
+        runWithLoading('Transferring JSON...', () => {
+          setPaneData('left', state.right.data);
+          showToast('Transferred Right JSON ➔ Left Pane', 'success');
+        });
       });
       elements.btnBridgeDiff.addEventListener('click', () => {
-        setLayout('split');
-        const diffTab = elements.paneRight.querySelector('.pane-tab[data-view="diff"]');
-        if (diffTab) diffTab.click();
+        runWithLoading('Generating Diff...', () => {
+          setLayout('split');
+          const diffTab = elements.paneRight.querySelector('.pane-tab[data-view="diff"]');
+          if (diffTab) diffTab.click();
+        });
       });
 
       // Dropdown Handling
@@ -5594,6 +6797,7 @@
           elements.csvOutputJson.value = `// CSV Conversion Error:\n${err.message}`;
           elements.csvRecordCount.textContent = 'Error';
         }
+        saveSessionToLocalStorage();
       }
 
       function openCsvConverter(targetPane = 'left') {
@@ -5636,6 +6840,7 @@ ORD-1004,Diana Prince,Electronics,79.00,2,true,2026-08-14`;
       elements.csvTypeCastCheck.addEventListener('change', updateCsvConversion);
       elements.csvTrimCheck.addEventListener('change', updateCsvConversion);
       elements.csvInputText.addEventListener('input', updateCsvConversion);
+      elements.csvInputText.addEventListener('blur', saveSessionImmediately);
 
       elements.btnCsvLoadSample.addEventListener('click', loadCsvSample);
 
@@ -5704,12 +6909,14 @@ ORD-1004,Diana Prince,Electronics,79.00,2,true,2026-08-14`;
       });
 
       elements.queryInput.addEventListener('input', runQuery);
+      elements.queryInput.addEventListener('blur', saveSessionImmediately);
 
       function runQuery() {
         const query = elements.queryInput.value.trim();
         const data = state.left.data || state.right.data;
         if (!query) {
           elements.queryPreview.value = JSON.stringify(data, null, 2);
+          saveSessionToLocalStorage();
           return;
         }
         try {
@@ -5725,6 +6932,7 @@ ORD-1004,Diana Prince,Electronics,79.00,2,true,2026-08-14`;
         } catch (err) {
           elements.queryPreview.value = `// Query Evaluation Error:\n${err.message}`;
         }
+        saveSessionToLocalStorage();
       }
 
       elements.queryPresetsMenu.querySelectorAll('.dropdown-item').forEach(item => {
@@ -5830,9 +7038,85 @@ ORD-1004,Diana Prince,Electronics,79.00,2,true,2026-08-14`;
         }
       });
 
-      // --- INITIAL LOAD ---
-      setPaneData('left', ECOMMERCE_RELATIONAL_DATA);
-      setPaneData('right', RIGHT_SAMPLE_DATA);
+      // --- INITIAL LOAD & RESTORATION FROM INDEXEDDB & LOCALSTORAGE ---
+      (async function initSessionRestoration() {
+        isRestoringSession = true;
+        try {
+          // 1. First read immediate synchronous LocalStorage values
+          let savedLeftText = localStorage.getItem('json_studio_left_text');
+          let savedRightText = localStorage.getItem('json_studio_right_text');
+          let savedLeftView = localStorage.getItem('json_studio_left_view');
+          let savedRightView = localStorage.getItem('json_studio_right_view');
+          let savedLayout = localStorage.getItem('json_studio_layout');
+          let savedHierarchyText = localStorage.getItem('json_studio_hierarchy_text');
+          let savedHierarchyResult = localStorage.getItem('json_studio_hierarchy_result');
+          let savedQueryInput = localStorage.getItem('json_studio_query_input');
+          let savedCsvInput = localStorage.getItem('json_studio_csv_input');
+
+          // 2. Fetch full capacity data from IndexedDB
+          try {
+            const idbData = await idbLoadSession();
+            if (idbData) {
+              if (idbData.left_text !== undefined && idbData.left_text !== null) savedLeftText = idbData.left_text;
+              if (idbData.right_text !== undefined && idbData.right_text !== null) savedRightText = idbData.right_text;
+              if (idbData.left_view !== undefined) savedLeftView = idbData.left_view;
+              if (idbData.right_view !== undefined) savedRightView = idbData.right_view;
+              if (idbData.layout !== undefined) savedLayout = idbData.layout;
+              if (idbData.hierarchy_text !== undefined) savedHierarchyText = idbData.hierarchy_text;
+              if (idbData.hierarchy_result !== undefined) savedHierarchyResult = idbData.hierarchy_result;
+              if (idbData.query_input !== undefined) savedQueryInput = idbData.query_input;
+              if (idbData.csv_input !== undefined) savedCsvInput = idbData.csv_input;
+            }
+          } catch (e) {}
+
+          if (savedLayout) {
+            setLayout(savedLayout);
+          }
+
+          if (savedHierarchyText && elements.hierarchyInputText) {
+            elements.hierarchyInputText.value = savedHierarchyText;
+          }
+          if (savedHierarchyResult && elements.hierarchyResultPreview) {
+            elements.hierarchyResultPreview.value = savedHierarchyResult;
+          }
+          if (savedQueryInput && elements.queryInput) {
+            elements.queryInput.value = savedQueryInput;
+          }
+          if (savedCsvInput && elements.csvInputText) {
+            elements.csvInputText.value = savedCsvInput;
+          }
+
+          if (savedLeftText !== null && savedLeftText !== undefined && savedLeftText.trim() !== '') {
+            setPaneText('left', savedLeftText, false);
+          } else {
+            setPaneData('left', ECOMMERCE_RELATIONAL_DATA, false);
+          }
+
+          if (savedRightText !== null && savedRightText !== undefined && savedRightText.trim() !== '') {
+            setPaneText('right', savedRightText, false);
+          } else {
+            setPaneData('right', RIGHT_SAMPLE_DATA, false);
+          }
+
+          if (savedLeftView) {
+            switchView('left', savedLeftView, true);
+          } else {
+            renderPane('left');
+          }
+
+          if (savedRightView) {
+            switchView('right', savedRightView, true);
+          } else {
+            renderPane('right');
+          }
+        } catch (err) {
+          console.error('Session restore error:', err);
+          setPaneData('left', ECOMMERCE_RELATIONAL_DATA);
+          setPaneData('right', RIGHT_SAMPLE_DATA);
+        } finally {
+          isRestoringSession = false;
+        }
+      })();
     })();
   </script>
 </body>
