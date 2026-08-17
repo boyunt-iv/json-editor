@@ -4849,13 +4849,15 @@
         textarea.scrollTop = targetScrollTop;
       }
 
-      function focusCurrentMatch(side) {
+      function focusCurrentMatch(side, stealFocus = false) {
         const s = searchState[side];
         const isLeft = side === 'left';
         const currentView = state[side].view || 'code';
         const textarea = isLeft ? elements.leftCodeTextarea : elements.rightCodeTextarea;
         const treeContainer = isLeft ? elements.leftTreeView : elements.rightTreeView;
         const countSpan = isLeft ? elements.leftSearchCount : elements.rightSearchCount;
+        const searchInput = isLeft ? elements.leftSearchInput : elements.rightSearchInput;
+        const replaceInput = isLeft ? elements.leftReplaceInput : elements.rightReplaceInput;
 
         if (currentView === 'tree') {
           if (!s.treeMatches || s.treeMatches.length === 0 || s.matchIndex < 0) return;
@@ -4873,7 +4875,10 @@
           if (!s.codeMatches || s.codeMatches.length === 0 || s.matchIndex < 0) return;
           const match = s.codeMatches[s.matchIndex];
           if (match && textarea) {
-            textarea.focus();
+            const isUserInSearchBox = document.activeElement === searchInput || document.activeElement === replaceInput;
+            if (stealFocus && !isUserInSearchBox) {
+              textarea.focus();
+            }
             textarea.setSelectionRange(match.start, match.end);
             scrollTextareaToMatch(textarea, match.start);
           }
@@ -5098,9 +5103,13 @@
         const isLeft = side === 'left';
         const container = isLeft ? elements.leftSearchContainer : elements.rightSearchContainer;
         const searchInput = isLeft ? elements.leftSearchInput : elements.rightSearchInput;
+        const textarea = isLeft ? elements.leftCodeTextarea : elements.rightCodeTextarea;
         if (container) container.classList.remove('active');
         if (searchInput) searchInput.value = '';
         executeSearch(side);
+        if (state[side].view === 'code' && textarea) {
+          textarea.focus();
+        }
       }
 
       // Hook up search option buttons and input listeners
@@ -5253,173 +5262,201 @@
           ? allTables.filter(t => t.name.toLowerCase().includes(filterQ))
           : allTables;
 
-        let html = `
-          <!-- Top Multi-Table Control Bar -->
-          <div class="multi-table-control-bar">
-            <div class="table-filter-input-wrap">
-              <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              <input type="text" class="table-filter-input" id="tableSearchInput_${side}" placeholder="Search table key name (e.g. party, account)..." value="${escapeHtml(tvState.filter)}" />
-              ${tvState.filter ? `<button class="btn btn-sm btn-icon btn-ghost" id="btnClearTableSearch_${side}" style="height:20px; width:20px; font-size:10px;">✕</button>` : ''}
+        // Check if control bar already exists in container
+        const existingControlBar = document.getElementById(`multiTableControlBar_${side}`);
+        const pillsHtml = allTables.map((t, idx) => {
+          const isMatch = filterQ && t.name.toLowerCase().includes(filterQ);
+          const pillStyle = isMatch ? 'border-color:var(--accent-primary); background:rgba(56,139,253,0.15);' : '';
+          return `
+            <div class="table-nav-pill" style="${pillStyle}" data-target-table="${side}_table_${idx}">
+              📁 ${escapeHtml(t.name)}
+              <span class="pill-count">${t.rows.length}</span>
             </div>
+          `;
+        }).join('');
 
-            <div style="display:flex; align-items:center; gap:8px;">
-              <span style="font-size:11.5px; color:var(--text-muted); font-weight:600;">
-                📊 <b>${filteredTables.length}</b> of <b>${allTables.length}</b> Tables &bull; <b>${totalRows}</b> Rows Total
-              </span>
-              <button class="btn btn-sm" id="btnExpandAllTables_${side}" title="Expand all tables">➕ Expand All</button>
-              <button class="btn btn-sm" id="btnCollapseAllTables_${side}" title="Collapse all tables">➖ Collapse All</button>
-              <button class="btn btn-sm btn-primary" id="btnExportAllCsv_${side}" title="Export all tables to CSV">📥 Export All CSVs</button>
-            </div>
-          </div>
-
-          <!-- Quick Jump Navigation Pills -->
-          <div class="table-pills-bar">
-            ${allTables.map((t, idx) => {
-              const isMatch = filterQ && t.name.toLowerCase().includes(filterQ);
-              const pillStyle = isMatch ? 'border-color:var(--accent-primary); background:rgba(56,139,253,0.15);' : '';
-              return `
-                <div class="table-nav-pill" style="${pillStyle}" data-target-table="${side}_table_${idx}">
-                  📁 ${escapeHtml(t.name)}
-                  <span class="pill-count">${t.rows.length}</span>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        `;
-
+        let cardsHtml = '';
         if (filteredTables.length === 0) {
-          html += `
+          cardsHtml = `
             <div style="padding:40px; text-align:center; color:var(--text-dim);">
               No tables matching filter "<b>${escapeHtml(tvState.filter)}</b>".
             </div>
           `;
-          container.innerHTML = html;
-          attachTableEvents(side, allTables, container);
-          return;
+        } else {
+          filteredTables.forEach((table) => {
+            const originalIdx = allTables.indexOf(table);
+            const tableId = `${side}_table_${originalIdx}`;
+            const isCollapsed = tvState.collapsed.has(table.name);
+
+            // Extract columns for this table
+            const columns = new Set();
+            table.rows.forEach(r => {
+              if (r !== null && typeof r === 'object') {
+                Object.keys(r).forEach(k => columns.add(k));
+              } else {
+                columns.add('Value');
+              }
+            });
+            const colList = sortEntityColumns(Array.from(columns), table.rows);
+
+            // Apply table sorting if configured
+            let sortedRows = [...table.rows];
+            const sortInfo = tvState.sorts[table.name];
+            if (sortInfo && sortInfo.col) {
+              const { col, asc } = sortInfo;
+              sortedRows.sort((a, b) => {
+                let valA = a && typeof a === 'object' ? a[col] : a;
+                let valB = b && typeof b === 'object' ? b[col] : b;
+                if (valA === undefined || valA === null) valA = '';
+                if (valB === undefined || valB === null) valB = '';
+                if (typeof valA === 'number' && typeof valB === 'number') {
+                  return asc ? valA - valB : valB - valA;
+                }
+                return asc
+                  ? String(valA).localeCompare(String(valB))
+                  : String(valB).localeCompare(String(valA));
+              });
+            }
+
+            cardsHtml += `
+              <div class="table-card" id="${tableId}">
+                <div class="table-card-header" data-toggle-collapse="${escapeHtml(table.name)}">
+                  <div class="table-card-title">
+                    <span style="color:var(--text-dim); transition:transform 0.15s; ${isCollapsed ? 'transform:rotate(-90deg);' : ''}">▼</span>
+                    <span>📁 ${escapeHtml(table.name)}</span>
+                    <span class="table-nav-pill" style="font-size:10.5px; height:20px; padding:1px 6px;">
+                      ${table.rows.length} rows &bull; ${colList.length} cols
+                    </span>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:6px;" onclick="event.stopPropagation();">
+                    <button class="btn btn-sm btn-primary" data-focus-table="${escapeHtml(table.name)}" data-side="${side}" title="Open Single Table in Fullscreen Focus View with Power Tools">⛶ Focus / Tools</button>
+                    <button class="btn btn-sm" data-copy-table="${escapeHtml(table.name)}" title="Copy table as JSON">📋 Copy JSON</button>
+                    <button class="btn btn-sm" data-export-table="${escapeHtml(table.name)}" title="Export this table to CSV">📥 Export CSV</button>
+                  </div>
+                </div>
+
+                <div class="table-card-body" style="${isCollapsed ? 'display:none;' : ''}">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th class="row-idx">#</th>
+                        ${colList.map(col => {
+                          const isSorted = sortInfo && sortInfo.col === col;
+                          const sortArrow = isSorted ? (sortInfo.asc ? ' ▲' : ' ▼') : '';
+                          return `
+                            <th>
+                              <div class="col-header-wrap">
+                                <div class="col-header-title" data-sort-table="${escapeHtml(table.name)}" data-sort-col="${escapeHtml(col)}" title="Click to sort by ${escapeHtml(col)}">
+                                  <span>${escapeHtml(col)}</span>
+                                  <span style="color:var(--accent-primary); font-size:10px;">${sortArrow}</span>
+                                </div>
+                                <div class="col-header-actions" onclick="event.stopPropagation();">
+                                  <button class="btn btn-sm btn-icon btn-ghost" data-copy-col-name="${escapeHtml(col)}" title="Copy Field Name (${escapeHtml(col)})" style="height:18px; width:18px; padding:0; font-size:10px;">📋</button>
+                                  <button class="btn btn-sm btn-icon btn-ghost" data-copy-col-path="${escapeHtml(table.name)}.${escapeHtml(col)}" title="Copy JSON Path ($.${escapeHtml(table.name)}[*].${escapeHtml(col)})" style="height:18px; width:18px; padding:0; font-size:10px;">📑</button>
+                                </div>
+                              </div>
+                            </th>
+                          `;
+                        }).join('')}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${sortedRows.map((row, idx) => {
+                        let rowHtml = `<tr><td class="row-idx">${idx + 1}</td>`;
+                        colList.forEach(col => {
+                          let val = row && typeof row === 'object' ? row[col] : (col === 'Value' ? row : '');
+                          let cellContent = '';
+                          const cellPath = `$.${table.name}[${idx}].${col}`;
+
+                          if (val === undefined || val === null) {
+                            cellContent = '<span style="color:var(--json-null); font-style:italic;">null</span>';
+                          } else if (Array.isArray(val)) {
+                            if (val.length === 0) {
+                              cellContent = '<span style="color:var(--text-dim); font-size:11px;">[0 items]</span>';
+                            } else {
+                              cellContent = `<button class="btn btn-sm btn-ghost" data-drilldown-path="${escapeHtml(cellPath)}" data-drilldown-name="${escapeHtml(col)}" data-side="${side}" onclick="event.stopPropagation();" style="background:rgba(56,139,253,0.14); color:var(--accent-primary); border:1px solid rgba(56,139,253,0.3); font-size:11px; padding:2px 7px; border-radius:5px; font-weight:600; cursor:pointer;" title="Click to view nested table '${escapeHtml(col)}' (${val.length} items)">📦 [${val.length} items] ↗</button>`;
+                            }
+                          } else if (typeof val === 'object' && val !== null) {
+                            const keysCount = Object.keys(val).length;
+                            cellContent = `<button class="btn btn-sm btn-ghost" data-drilldown-path="${escapeHtml(cellPath)}" data-drilldown-name="${escapeHtml(col)}" data-side="${side}" onclick="event.stopPropagation();" style="background:rgba(187,128,255,0.14); color:var(--accent-purple); border:1px solid rgba(187,128,255,0.3); font-size:11px; padding:2px 7px; border-radius:5px; font-weight:600; cursor:pointer;" title="Click to inspect nested '${escapeHtml(col)}' (${keysCount} properties)">🏷️ {${keysCount} props} ↗</button>`;
+                          } else if (typeof val === 'boolean') {
+                            cellContent = `<span style="color:var(--json-boolean); font-weight:600;">${val}</span>`;
+                          } else if (typeof val === 'number') {
+                            cellContent = `<span style="color:var(--json-number); font-family:var(--font-mono);">${val}</span>`;
+                          } else {
+                            cellContent = escapeHtml(String(val));
+                          }
+                          const rawValStr = val === undefined ? '' : (val === null ? 'null' : (typeof val === 'object' ? JSON.stringify(val) : String(val)));
+                          rowHtml += `<td class="cell-interactive" data-cell-path="${escapeHtml(cellPath)}" data-cell-val="${escapeHtml(rawValStr)}" title="Click to copy value: ${escapeHtml(rawValStr)}">${cellContent}</td>`;
+                        });
+                        rowHtml += `</tr>`;
+                        return rowHtml;
+                      }).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            `;
+          });
         }
 
-        // Render each table card
-        filteredTables.forEach((table) => {
-          const originalIdx = allTables.indexOf(table);
-          const tableId = `${side}_table_${originalIdx}`;
-          const isCollapsed = tvState.collapsed.has(table.name);
-
-          // Extract columns for this table
-          const columns = new Set();
-          table.rows.forEach(r => {
-            if (r !== null && typeof r === 'object') {
-              Object.keys(r).forEach(k => columns.add(k));
-            } else {
-              columns.add('Value');
-            }
-          });
-          const colList = sortEntityColumns(Array.from(columns), table.rows);
-
-          // Apply table sorting if configured
-          let sortedRows = [...table.rows];
-          const sortInfo = tvState.sorts[table.name];
-          if (sortInfo && sortInfo.col) {
-            const { col, asc } = sortInfo;
-            sortedRows.sort((a, b) => {
-              let valA = a && typeof a === 'object' ? a[col] : a;
-              let valB = b && typeof b === 'object' ? b[col] : b;
-              if (valA === undefined || valA === null) valA = '';
-              if (valB === undefined || valB === null) valB = '';
-              if (typeof valA === 'number' && typeof valB === 'number') {
-                return asc ? valA - valB : valB - valA;
-              }
-              return asc
-                ? String(valA).localeCompare(String(valB))
-                : String(valB).localeCompare(String(valA));
-            });
+        if (existingControlBar) {
+          // Update parts without destroying search input or control bar
+          const statsEl = document.getElementById(`tableStatsBadge_${side}`);
+          if (statsEl) {
+            statsEl.innerHTML = `📊 <b>${filteredTables.length}</b> of <b>${allTables.length}</b> Tables &bull; <b>${totalRows}</b> Rows Total`;
           }
-
-          html += `
-            <div class="table-card" id="${tableId}">
-              <div class="table-card-header" data-toggle-collapse="${escapeHtml(table.name)}">
-                <div class="table-card-title">
-                  <span style="color:var(--text-dim); transition:transform 0.15s; ${isCollapsed ? 'transform:rotate(-90deg);' : ''}">▼</span>
-                  <span>📁 ${escapeHtml(table.name)}</span>
-                  <span class="table-nav-pill" style="font-size:10.5px; height:20px; padding:1px 6px;">
-                    ${table.rows.length} rows &bull; ${colList.length} cols
-                  </span>
-                </div>
-                <div style="display:flex; align-items:center; gap:6px;" onclick="event.stopPropagation();">
-                  <button class="btn btn-sm btn-primary" data-focus-table="${escapeHtml(table.name)}" data-side="${side}" title="Open Single Table in Fullscreen Focus View with Power Tools">⛶ Focus / Tools</button>
-                  <button class="btn btn-sm" data-copy-table="${escapeHtml(table.name)}" title="Copy table as JSON">📋 Copy JSON</button>
-                  <button class="btn btn-sm" data-export-table="${escapeHtml(table.name)}" title="Export this table to CSV">📥 Export CSV</button>
-                </div>
+          const clearBtn = document.getElementById(`btnClearTableSearch_${side}`);
+          if (clearBtn) {
+            clearBtn.style.display = tvState.filter ? 'inline-flex' : 'none';
+          }
+          const pillsEl = document.getElementById(`tablePillsBar_${side}`);
+          if (pillsEl) {
+            pillsEl.innerHTML = pillsHtml;
+          }
+          const cardsEl = document.getElementById(`tableCardsContainer_${side}`);
+          if (cardsEl) {
+            cardsEl.innerHTML = cardsHtml;
+          }
+          attachTableDynamicEvents(side, allTables, container);
+        } else {
+          // First render: create entire layout
+          let fullHtml = `
+            <!-- Top Multi-Table Control Bar -->
+            <div class="multi-table-control-bar" id="multiTableControlBar_${side}">
+              <div class="table-filter-input-wrap">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" class="table-filter-input" id="tableSearchInput_${side}" placeholder="Search table key name (e.g. party, account)..." value="${escapeHtml(tvState.filter)}" />
+                <button class="btn btn-sm btn-icon btn-ghost" id="btnClearTableSearch_${side}" style="height:20px; width:20px; font-size:10px; ${tvState.filter ? '' : 'display:none;'}">✕</button>
               </div>
 
-              <div class="table-card-body" style="${isCollapsed ? 'display:none;' : ''}">
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th class="row-idx">#</th>
-                      ${colList.map(col => {
-                        const isSorted = sortInfo && sortInfo.col === col;
-                        const sortArrow = isSorted ? (sortInfo.asc ? ' ▲' : ' ▼') : '';
-                        return `
-                          <th>
-                            <div class="col-header-wrap">
-                              <div class="col-header-title" data-sort-table="${escapeHtml(table.name)}" data-sort-col="${escapeHtml(col)}" title="Click to sort by ${escapeHtml(col)}">
-                                <span>${escapeHtml(col)}</span>
-                                <span style="color:var(--accent-primary); font-size:10px;">${sortArrow}</span>
-                              </div>
-                              <div class="col-header-actions" onclick="event.stopPropagation();">
-                                <button class="btn btn-sm btn-icon btn-ghost" data-copy-col-name="${escapeHtml(col)}" title="Copy Field Name (${escapeHtml(col)})" style="height:18px; width:18px; padding:0; font-size:10px;">📋</button>
-                                <button class="btn btn-sm btn-icon btn-ghost" data-copy-col-path="${escapeHtml(table.name)}.${escapeHtml(col)}" title="Copy JSON Path ($.${escapeHtml(table.name)}[*].${escapeHtml(col)})" style="height:18px; width:18px; padding:0; font-size:10px;">📑</button>
-                              </div>
-                            </div>
-                          </th>
-                        `;
-                      }).join('')}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${sortedRows.map((row, idx) => {
-                      let rowHtml = `<tr><td class="row-idx">${idx + 1}</td>`;
-                      colList.forEach(col => {
-                        let val = row && typeof row === 'object' ? row[col] : (col === 'Value' ? row : '');
-                        let cellContent = '';
-                        const cellPath = `$.${table.name}[${idx}].${col}`;
-
-                        if (val === undefined || val === null) {
-                          cellContent = '<span style="color:var(--json-null); font-style:italic;">null</span>';
-                        } else if (Array.isArray(val)) {
-                          if (val.length === 0) {
-                            cellContent = '<span style="color:var(--text-dim); font-size:11px;">[0 items]</span>';
-                          } else {
-                            cellContent = `<button class="btn btn-sm btn-ghost" data-drilldown-path="${escapeHtml(cellPath)}" data-drilldown-name="${escapeHtml(col)}" data-side="${side}" onclick="event.stopPropagation();" style="background:rgba(56,139,253,0.14); color:var(--accent-primary); border:1px solid rgba(56,139,253,0.3); font-size:11px; padding:2px 7px; border-radius:5px; font-weight:600; cursor:pointer;" title="Click to view nested table '${escapeHtml(col)}' (${val.length} items)">📦 [${val.length} items] ↗</button>`;
-                          }
-                        } else if (typeof val === 'object' && val !== null) {
-                          const keysCount = Object.keys(val).length;
-                          cellContent = `<button class="btn btn-sm btn-ghost" data-drilldown-path="${escapeHtml(cellPath)}" data-drilldown-name="${escapeHtml(col)}" data-side="${side}" onclick="event.stopPropagation();" style="background:rgba(187,128,255,0.14); color:var(--accent-purple); border:1px solid rgba(187,128,255,0.3); font-size:11px; padding:2px 7px; border-radius:5px; font-weight:600; cursor:pointer;" title="Click to inspect nested '${escapeHtml(col)}' (${keysCount} properties)">🏷️ {${keysCount} props} ↗</button>`;
-                        } else if (typeof val === 'boolean') {
-                          cellContent = `<span style="color:var(--json-boolean); font-weight:600;">${val}</span>`;
-                        } else if (typeof val === 'number') {
-                          cellContent = `<span style="color:var(--json-number); font-family:var(--font-mono);">${val}</span>`;
-                        } else {
-                          cellContent = escapeHtml(String(val));
-                        }
-                        const rawValStr = val === undefined ? '' : (val === null ? 'null' : (typeof val === 'object' ? JSON.stringify(val) : String(val)));
-                        rowHtml += `<td class="cell-interactive" data-cell-path="${escapeHtml(cellPath)}" data-cell-val="${escapeHtml(rawValStr)}" title="Click to copy value: ${escapeHtml(rawValStr)}">${cellContent}</td>`;
-                      });
-                      rowHtml += `</tr>`;
-                      return rowHtml;
-                    }).join('')}
-                  </tbody>
-                </table>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:11.5px; color:var(--text-muted); font-weight:600;" id="tableStatsBadge_${side}">
+                  📊 <b>${filteredTables.length}</b> of <b>${allTables.length}</b> Tables &bull; <b>${totalRows}</b> Rows Total
+                </span>
+                <button class="btn btn-sm" id="btnExpandAllTables_${side}" title="Expand all tables">➕ Expand All</button>
+                <button class="btn btn-sm" id="btnCollapseAllTables_${side}" title="Collapse all tables">➖ Collapse All</button>
+                <button class="btn btn-sm btn-primary" id="btnExportAllCsv_${side}" title="Export all tables to CSV">📥 Export All CSVs</button>
               </div>
             </div>
-          `;
-        });
 
-        container.innerHTML = html;
-        attachTableEvents(side, allTables, container);
+            <!-- Quick Jump Navigation Pills -->
+            <div class="table-pills-bar" id="tablePillsBar_${side}">
+              ${pillsHtml}
+            </div>
+
+            <!-- Table Cards Container -->
+            <div class="multi-table-cards-container" id="tableCardsContainer_${side}">
+              ${cardsHtml}
+            </div>
+          `;
+          container.innerHTML = fullHtml;
+          attachTableControlEvents(side, allTables, container);
+          attachTableDynamicEvents(side, allTables, container);
+        }
       }
 
-      function attachTableEvents(side, allTables, container) {
+      function attachTableControlEvents(side, allTables, container) {
         const tvState = tableViewState[side];
 
         // Search Input
@@ -5428,12 +5465,6 @@
           searchInput.addEventListener('input', (e) => {
             tvState.filter = e.target.value;
             renderTableView(side);
-            // keep focus at end
-            const updatedInput = document.getElementById(`tableSearchInput_${side}`);
-            if (updatedInput) {
-              updatedInput.focus();
-              updatedInput.selectionStart = updatedInput.selectionEnd = updatedInput.value.length;
-            }
           });
         }
 
@@ -5441,22 +5472,11 @@
         if (btnClearSearch) {
           btnClearSearch.addEventListener('click', () => {
             tvState.filter = '';
+            const input = document.getElementById(`tableSearchInput_${side}`);
+            if (input) input.value = '';
             renderTableView(side);
           });
         }
-
-        // Navigation Pills Smooth Scroll
-        container.querySelectorAll('.table-nav-pill[data-target-table]').forEach(pill => {
-          pill.addEventListener('click', () => {
-            const targetId = pill.dataset.targetTable;
-            const targetEl = document.getElementById(targetId);
-            if (targetEl) {
-              targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              targetEl.style.outline = '2px solid var(--accent-primary)';
-              setTimeout(() => { targetEl.style.outline = 'none'; }, 1500);
-            }
-          });
-        });
 
         // Expand / Collapse All
         const btnExpandAll = document.getElementById(`btnExpandAllTables_${side}`);
@@ -5490,6 +5510,23 @@
             showToast(`Exported ${allTables.length} table CSV files!`, 'success');
           });
         }
+      }
+
+      function attachTableDynamicEvents(side, allTables, container) {
+        const tvState = tableViewState[side];
+
+        // Navigation Pills Smooth Scroll
+        container.querySelectorAll('.table-nav-pill[data-target-table]').forEach(pill => {
+          pill.addEventListener('click', () => {
+            const targetId = pill.dataset.targetTable;
+            const targetEl = document.getElementById(targetId);
+            if (targetEl) {
+              targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              targetEl.style.outline = '2px solid var(--accent-primary)';
+              setTimeout(() => { targetEl.style.outline = 'none'; }, 1500);
+            }
+          });
+        });
 
         // Toggle Single Table Collapse
         container.querySelectorAll('[data-toggle-collapse]').forEach(header => {
@@ -5586,6 +5623,7 @@
             }
           });
         });
+
         // Drilldown buttons in main Table View
         container.querySelectorAll('[data-drilldown-path]').forEach(btn => {
           btn.addEventListener('click', (e) => {
