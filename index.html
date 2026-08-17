@@ -415,16 +415,17 @@
       gap: 4px;
     }
 
-    /* Search & Filter Bar */
+    /* Search & Replace Bar */
     .search-container {
       display: none;
+      flex-direction: column;
       background: var(--bg-panel-alt);
       border-bottom: 1px solid var(--border-color);
-      padding: 5px 10px;
-      align-items: center;
+      padding: 6px 10px;
       gap: 6px;
       font-size: 12px;
       animation: slideDown 0.15s ease-out;
+      user-select: none;
     }
     .search-container.active {
       display: flex;
@@ -432,6 +433,34 @@
     @keyframes slideDown {
       from { opacity: 0; transform: translateY(-5px); }
       to { opacity: 1; transform: translateY(0); }
+    }
+
+    .search-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+    }
+    .replace-row {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+      padding-left: 28px;
+    }
+    .replace-row.active {
+      display: flex;
+    }
+
+    .search-toggle-btn {
+      transition: transform 0.15s ease;
+      padding: 2px;
+      height: 24px;
+      width: 24px;
+      flex-shrink: 0;
+    }
+    .search-toggle-btn.expanded svg {
+      transform: rotate(90deg);
     }
 
     .search-input-wrap {
@@ -443,7 +472,7 @@
       border-radius: 5px;
       padding: 2px 8px;
       flex: 1;
-      max-width: 380px;
+      max-width: 460px;
     }
     .search-input-wrap:focus-within {
       border-color: var(--border-focus);
@@ -453,15 +482,65 @@
       border: none;
       outline: none;
       color: var(--text-main);
-      font-family: var(--font-sans);
+      font-family: var(--font-mono);
       font-size: 12px;
       width: 100%;
+    }
+    .search-options {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+    .search-opt-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      border-radius: 4px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      padding: 1px 5px;
+      cursor: pointer;
+      height: 20px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+    .search-opt-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text-main);
+      border-color: var(--border-color);
+    }
+    .search-opt-btn.active {
+      background: var(--accent-primary);
+      color: #ffffff;
+      border-color: var(--accent-primary);
+    }
+    .btn-unescape {
+      font-size: 10px;
+      padding: 1px 6px;
+      background: var(--bg-hover);
+      color: var(--accent-cyan);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-unescape:hover {
+      background: var(--accent-cyan);
+      color: #ffffff;
+      border-color: var(--accent-cyan);
     }
     .search-count {
       font-size: 11px;
       color: var(--text-muted);
       font-family: var(--font-mono);
       white-space: nowrap;
+      padding-left: 4px;
+      min-width: 36px;
+      text-align: right;
     }
 
     /* Pane View Area */
@@ -1459,6 +1538,7 @@
               <div class="dropdown-divider"></div>
               <div class="dropdown-item" id="btnLeftCleanNulls">🧹 Remove Null & Empty Values</div>
               <div class="dropdown-item" id="btnLeftFixJson">🩹 Auto-Repair Invalid JSON</div>
+              <div class="dropdown-item" id="btnLeftUnescape">✨ Unescape Escaped JSON Strings</div>
               <div class="dropdown-divider"></div>
               <div class="dropdown-item" id="btnLeftExpandAll">➕ Expand All Nodes</div>
               <div class="dropdown-item" id="btnLeftCollapseAll">➖ Collapse All Nodes</div>
@@ -1473,16 +1553,37 @@
         </div>
       </div>
 
-      <!-- Search Sub-toolbar -->
+      <!-- Search & Replace Sub-toolbar -->
       <div class="search-container" id="leftSearchContainer">
-        <div class="search-input-wrap">
-          <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" class="search-input" id="leftSearchInput" placeholder="Find key or value..." />
-          <span class="search-count" id="leftSearchCount">0/0</span>
+        <!-- Row 1: Find -->
+        <div class="search-row">
+          <button class="btn btn-sm btn-icon btn-ghost search-toggle-btn" id="btnLeftToggleReplace" title="Toggle Replace Bar (Ctrl+H)">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+          <div class="search-input-wrap">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" class="search-input" id="leftSearchInput" placeholder="Find in JSON (Ctrl+F)..." spellcheck="false" />
+            <div class="search-options">
+              <button class="search-opt-btn" id="btnLeftSearchCase" title="Match Case (Alt+C)">Aa</button>
+              <button class="search-opt-btn" id="btnLeftSearchWord" title="Match Whole Word (Alt+W)">\b</button>
+              <button class="search-opt-btn" id="btnLeftSearchRegex" title="Use Regular Expression (Alt+R)">.*</button>
+            </div>
+            <span class="search-count" id="leftSearchCount">0/0</span>
+          </div>
+          <button class="btn btn-sm btn-icon" id="btnLeftSearchPrev" title="Previous Match (Shift+Enter)">▲</button>
+          <button class="btn btn-sm btn-icon" id="btnLeftSearchNext" title="Next Match (Enter)">▼</button>
+          <button class="btn btn-sm btn-icon btn-ghost" id="btnLeftSearchClose" title="Close Search (Esc)">✕</button>
         </div>
-        <button class="btn btn-sm btn-icon" id="btnLeftSearchPrev" title="Previous match">▲</button>
-        <button class="btn btn-sm btn-icon" id="btnLeftSearchNext" title="Next match">▼</button>
-        <button class="btn btn-sm btn-icon btn-ghost" id="btnLeftSearchClose" title="Close search">✕</button>
+        <!-- Row 2: Replace -->
+        <div class="replace-row" id="leftReplaceRow">
+          <div class="search-input-wrap">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/></svg>
+            <input type="text" class="search-input" id="leftReplaceInput" placeholder="Replace with..." spellcheck="false" />
+            <button class="btn-unescape" id="btnLeftQuickUnescape" title="Unescape quotes and backslashes in JSON">Unescape</button>
+          </div>
+          <button class="btn btn-sm" id="btnLeftReplace" title="Replace Next Match">Replace</button>
+          <button class="btn btn-sm btn-primary" id="btnLeftReplaceAll" title="Replace All Occurrences">Replace All</button>
+        </div>
       </div>
 
       <!-- Main Content Views -->
@@ -1571,6 +1672,7 @@
               <div class="dropdown-divider"></div>
               <div class="dropdown-item" id="btnRightCleanNulls">🧹 Remove Null & Empty Values</div>
               <div class="dropdown-item" id="btnRightFixJson">🩹 Auto-Repair Invalid JSON</div>
+              <div class="dropdown-item" id="btnRightUnescape">✨ Unescape Escaped JSON Strings</div>
               <div class="dropdown-divider"></div>
               <div class="dropdown-item" id="btnRightExpandAll">➕ Expand All Nodes</div>
               <div class="dropdown-item" id="btnRightCollapseAll">➖ Collapse All Nodes</div>
@@ -1585,16 +1687,37 @@
         </div>
       </div>
 
-      <!-- Search Sub-toolbar -->
+      <!-- Search & Replace Sub-toolbar -->
       <div class="search-container" id="rightSearchContainer">
-        <div class="search-input-wrap">
-          <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" class="search-input" id="rightSearchInput" placeholder="Find key or value..." />
-          <span class="search-count" id="rightSearchCount">0/0</span>
+        <!-- Row 1: Find -->
+        <div class="search-row">
+          <button class="btn btn-sm btn-icon btn-ghost search-toggle-btn" id="btnRightToggleReplace" title="Toggle Replace Bar (Ctrl+H)">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+          <div class="search-input-wrap">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" class="search-input" id="rightSearchInput" placeholder="Find in JSON (Ctrl+F)..." spellcheck="false" />
+            <div class="search-options">
+              <button class="search-opt-btn" id="btnRightSearchCase" title="Match Case (Alt+C)">Aa</button>
+              <button class="search-opt-btn" id="btnRightSearchWord" title="Match Whole Word (Alt+W)">\b</button>
+              <button class="search-opt-btn" id="btnRightSearchRegex" title="Use Regular Expression (Alt+R)">.*</button>
+            </div>
+            <span class="search-count" id="rightSearchCount">0/0</span>
+          </div>
+          <button class="btn btn-sm btn-icon" id="btnRightSearchPrev" title="Previous Match (Shift+Enter)">▲</button>
+          <button class="btn btn-sm btn-icon" id="btnRightSearchNext" title="Next Match (Enter)">▼</button>
+          <button class="btn btn-sm btn-icon btn-ghost" id="btnRightSearchClose" title="Close Search (Esc)">✕</button>
         </div>
-        <button class="btn btn-sm btn-icon" id="btnRightSearchPrev" title="Previous match">▲</button>
-        <button class="btn btn-sm btn-icon" id="btnRightSearchNext" title="Next match">▼</button>
-        <button class="btn btn-sm btn-icon btn-ghost" id="btnRightSearchClose" title="Close search">✕</button>
+        <!-- Row 2: Replace -->
+        <div class="replace-row" id="rightReplaceRow">
+          <div class="search-input-wrap">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/></svg>
+            <input type="text" class="search-input" id="rightReplaceInput" placeholder="Replace with..." spellcheck="false" />
+            <button class="btn-unescape" id="btnRightQuickUnescape" title="Unescape quotes and backslashes in JSON">Unescape</button>
+          </div>
+          <button class="btn btn-sm" id="btnRightReplace" title="Replace Next Match">Replace</button>
+          <button class="btn btn-sm btn-primary" id="btnRightReplaceAll" title="Replace All Occurrences">Replace All</button>
+        </div>
       </div>
 
       <!-- Main Content Views -->
@@ -2076,10 +2199,11 @@
       <div class="modal-footer" style="justify-content:space-between; padding:6px 16px; font-size:11.5px;">
         <div style="display:flex; align-items:center; gap:8px; overflow:hidden; flex:1; min-width:0;">
           <span style="color:var(--text-muted); flex-shrink:0;">Selected Path:</span>
-          <code id="studioSelectedPath" style="background:var(--bg-hover); padding:1px 6px; border-radius:4px; font-family:var(--font-mono); color:var(--accent-primary); cursor:pointer; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:65%;" title="Click to copy path">$</code>
+          <code id="studioSelectedPath" style="background:var(--bg-hover); padding:1px 6px; border-radius:4px; font-family:var(--font-mono); color:var(--accent-primary); cursor:pointer; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:60%;" title="Click to copy path">$</code>
         </div>
         <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
-          <button class="btn btn-sm btn-ghost" id="studioBtnCopySelectedPath" title="Copy relative path of selected cell">📋 Copy Path</button>
+          <button class="btn btn-sm btn-ghost" id="studioBtnCopyValue" title="Copy value of selected cell">📋 Copy Value</button>
+          <button class="btn btn-sm btn-ghost" id="studioBtnCopySelectedPath" title="Copy relative path of selected cell">📍 Copy Path</button>
           <button class="btn btn-sm btn-ghost" id="studioBtnCopyFullPath" title="Copy full root-to-leaf JSON Path (e.g. $.application[0].appl_party[0].id)">📑 Copy Full JSON Path</button>
           <button class="btn btn-sm btn-primary" id="btnCloseModalTableStudio2">Close Focus</button>
         </div>
@@ -2460,6 +2584,7 @@
         studioBreadcrumbNav: document.getElementById('studioBreadcrumbNav'),
         studioTableWrapper: document.getElementById('studioTableWrapper'),
         studioSelectedPath: document.getElementById('studioSelectedPath'),
+        studioBtnCopyValue: document.getElementById('studioBtnCopyValue'),
         studioBtnCopySelectedPath: document.getElementById('studioBtnCopySelectedPath'),
         studioBtnCopyFullPath: document.getElementById('studioBtnCopyFullPath'),
         
@@ -2522,9 +2647,19 @@
         leftSearchContainer: document.getElementById('leftSearchContainer'),
         leftSearchInput: document.getElementById('leftSearchInput'),
         leftSearchCount: document.getElementById('leftSearchCount'),
+        btnLeftSearchCase: document.getElementById('btnLeftSearchCase'),
+        btnLeftSearchWord: document.getElementById('btnLeftSearchWord'),
+        btnLeftSearchRegex: document.getElementById('btnLeftSearchRegex'),
         btnLeftSearchPrev: document.getElementById('btnLeftSearchPrev'),
         btnLeftSearchNext: document.getElementById('btnLeftSearchNext'),
         btnLeftSearchClose: document.getElementById('btnLeftSearchClose'),
+        btnLeftToggleReplace: document.getElementById('btnLeftToggleReplace'),
+        leftReplaceRow: document.getElementById('leftReplaceRow'),
+        leftReplaceInput: document.getElementById('leftReplaceInput'),
+        btnLeftReplace: document.getElementById('btnLeftReplace'),
+        btnLeftReplaceAll: document.getElementById('btnLeftReplaceAll'),
+        btnLeftQuickUnescape: document.getElementById('btnLeftQuickUnescape'),
+        btnLeftUnescape: document.getElementById('btnLeftUnescape'),
 
         // Right Pane
         rightContent: document.getElementById('rightContent'),
@@ -2546,9 +2681,19 @@
         rightSearchContainer: document.getElementById('rightSearchContainer'),
         rightSearchInput: document.getElementById('rightSearchInput'),
         rightSearchCount: document.getElementById('rightSearchCount'),
+        btnRightSearchCase: document.getElementById('btnRightSearchCase'),
+        btnRightSearchWord: document.getElementById('btnRightSearchWord'),
+        btnRightSearchRegex: document.getElementById('btnRightSearchRegex'),
         btnRightSearchPrev: document.getElementById('btnRightSearchPrev'),
         btnRightSearchNext: document.getElementById('btnRightSearchNext'),
         btnRightSearchClose: document.getElementById('btnRightSearchClose'),
+        btnRightToggleReplace: document.getElementById('btnRightToggleReplace'),
+        rightReplaceRow: document.getElementById('rightReplaceRow'),
+        rightReplaceInput: document.getElementById('rightReplaceInput'),
+        btnRightReplace: document.getElementById('btnRightReplace'),
+        btnRightReplaceAll: document.getElementById('btnRightReplaceAll'),
+        btnRightQuickUnescape: document.getElementById('btnRightQuickUnescape'),
+        btnRightUnescape: document.getElementById('btnRightUnescape'),
 
         // General
         toastContainer: document.getElementById('toastContainer'),
@@ -3601,8 +3746,8 @@
         const rootElement = buildTreeNode(side, p.data, '$', '$', true);
         container.appendChild(rootElement);
 
-        if (p.searchQuery) {
-          applyTreeSearch(side, p.searchQuery);
+        if (searchState[side] && searchState[side].query) {
+          executeSearch(side, true);
         }
       }
 
@@ -4543,92 +4688,504 @@
         }
       });
 
-      // --- SEARCH & HIGHLIGHT IN TREE VIEW ---
-      function applyTreeSearch(side, query) {
-        state[side].searchQuery = query;
-        const container = side === 'left' ? elements.leftTreeView : elements.rightTreeView;
-        const countSpan = side === 'left' ? elements.leftSearchCount : elements.rightSearchCount;
+      // ==========================================
+      // --- UNIFIED FIND & REPLACE ENGINE ---
+      // ==========================================
+      const searchState = {
+        left: {
+          query: '',
+          replaceText: '',
+          caseSensitive: false,
+          wholeWord: false,
+          isRegex: false,
+          showReplace: false,
+          codeMatches: [],
+          treeMatches: [],
+          matchIndex: -1
+        },
+        right: {
+          query: '',
+          replaceText: '',
+          caseSensitive: false,
+          wholeWord: false,
+          isRegex: false,
+          showReplace: false,
+          codeMatches: [],
+          treeMatches: [],
+          matchIndex: -1
+        }
+      };
 
-        container.querySelectorAll('.tree-highlight').forEach(el => {
-          el.outerHTML = el.textContent;
-        });
+      function getSearchRegex(side) {
+        const s = searchState[side];
+        if (!s.query) return null;
+        let pattern = s.query;
+        if (!s.isRegex) {
+          pattern = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+        if (s.wholeWord) {
+          pattern = `\\b(?:${pattern})\\b`;
+        }
+        const flags = s.caseSensitive ? 'g' : 'gi';
+        try {
+          return new RegExp(pattern, flags);
+        } catch (e) {
+          return null;
+        }
+      }
 
-        if (!query) {
-          countSpan.textContent = '0/0';
-          state[side].searchMatches = [];
-          state[side].searchIndex = -1;
+      function executeSearch(side, keepCursor = false) {
+        const s = searchState[side];
+        const isLeft = side === 'left';
+        const searchInput = isLeft ? elements.leftSearchInput : elements.rightSearchInput;
+        const countSpan = isLeft ? elements.leftSearchCount : elements.rightSearchCount;
+        const textarea = isLeft ? elements.leftCodeTextarea : elements.rightCodeTextarea;
+        const treeContainer = isLeft ? elements.leftTreeView : elements.rightTreeView;
+        const currentView = state[side].view || 'code';
+
+        s.query = searchInput ? searchInput.value : '';
+
+        // Clean tree highlights
+        if (treeContainer) {
+          treeContainer.querySelectorAll('.tree-highlight').forEach(el => {
+            el.outerHTML = el.textContent;
+          });
+        }
+
+        if (!s.query) {
+          if (countSpan) countSpan.textContent = '0/0';
+          s.codeMatches = [];
+          s.treeMatches = [];
+          s.matchIndex = -1;
           return;
         }
 
-        const rows = container.querySelectorAll('.tree-row');
-        const matches = [];
-        const lowerQ = query.toLowerCase();
+        const regex = getSearchRegex(side);
+        if (!regex) {
+          if (countSpan) countSpan.textContent = 'Regex err';
+          s.codeMatches = [];
+          s.treeMatches = [];
+          s.matchIndex = -1;
+          return;
+        }
 
-        rows.forEach(row => {
-          const text = row.textContent.toLowerCase();
-          if (text.includes(lowerQ)) {
-            matches.push(row);
-            const targetEl = row.querySelector('.tree-key') || row.querySelector('.tree-value-container');
-            if (targetEl) {
-              highlightTextNode(targetEl, query);
-            }
-            let parent = row.parentElement;
-            while (parent && parent !== container) {
-              if (parent.classList.contains('tree-children')) {
-                parent.style.display = 'block';
-                const toggle = parent.previousElementSibling ? parent.previousElementSibling.querySelector('.tree-toggle') : null;
-                if (toggle) toggle.classList.remove('collapsed');
+        // 1. Search in Code View (Textarea)
+        const text = textarea ? (textarea.value || '') : '';
+        const codeMatches = [];
+        let m;
+        while ((m = regex.exec(text)) !== null) {
+          codeMatches.push({
+            start: m.index,
+            end: m.index + m[0].length,
+            text: m[0]
+          });
+          if (m[0].length === 0) {
+            regex.lastIndex++;
+          }
+        }
+        s.codeMatches = codeMatches;
+
+        // 2. Search in Tree View
+        const treeMatches = [];
+        if (treeContainer) {
+          const rows = treeContainer.querySelectorAll('.tree-row');
+          rows.forEach(row => {
+            const rowText = row.textContent;
+            regex.lastIndex = 0;
+            if (regex.test(rowText)) {
+              treeMatches.push(row);
+              const targetEl = row.querySelector('.tree-key') || row.querySelector('.tree-value-container');
+              if (targetEl) {
+                highlightTreeElement(targetEl, regex);
               }
-              parent = parent.parentElement;
+              let parent = row.parentElement;
+              while (parent && parent !== treeContainer) {
+                if (parent.classList.contains('tree-children')) {
+                  parent.style.display = 'block';
+                  const toggle = parent.previousElementSibling ? parent.previousElementSibling.querySelector('.tree-toggle') : null;
+                  if (toggle) toggle.classList.remove('collapsed');
+                }
+                parent = parent.parentElement;
+              }
+            }
+          });
+        }
+        s.treeMatches = treeMatches;
+
+        // Determine which matches list to use based on view
+        const matches = currentView === 'tree' ? s.treeMatches : s.codeMatches;
+        const total = matches.length;
+
+        if (total === 0) {
+          s.matchIndex = -1;
+          if (countSpan) countSpan.textContent = '0/0';
+          return;
+        }
+
+        if (!keepCursor || s.matchIndex < 0 || s.matchIndex >= total) {
+          s.matchIndex = 0;
+        }
+
+        if (countSpan) countSpan.textContent = `${s.matchIndex + 1}/${total}`;
+
+        // Focus & jump to current match
+        focusCurrentMatch(side);
+      }
+
+      function highlightTreeElement(element, regex) {
+        try {
+          const text = element.textContent;
+          element.innerHTML = text.replace(regex, (match) => `<span class="tree-highlight">${escapeHtml(match)}</span>`);
+        } catch (e) {}
+      }
+
+      function scrollTextareaToMatch(textarea, charOffset) {
+        const text = textarea.value;
+        const linesBefore = text.slice(0, charOffset).split('\n');
+        const lineIndex = linesBefore.length - 1;
+        const computed = window.getComputedStyle(textarea);
+        const lineHeight = parseFloat(computed.lineHeight) || 19.5;
+        const targetScrollTop = Math.max(0, (lineIndex - 4) * lineHeight);
+        textarea.scrollTop = targetScrollTop;
+      }
+
+      function focusCurrentMatch(side) {
+        const s = searchState[side];
+        const isLeft = side === 'left';
+        const currentView = state[side].view || 'code';
+        const textarea = isLeft ? elements.leftCodeTextarea : elements.rightCodeTextarea;
+        const treeContainer = isLeft ? elements.leftTreeView : elements.rightTreeView;
+        const countSpan = isLeft ? elements.leftSearchCount : elements.rightSearchCount;
+
+        if (currentView === 'tree') {
+          if (!s.treeMatches || s.treeMatches.length === 0 || s.matchIndex < 0) return;
+          if (treeContainer) {
+            treeContainer.querySelectorAll('.tree-row.selected').forEach(r => r.classList.remove('selected'));
+            const targetRow = s.treeMatches[s.matchIndex];
+            if (targetRow) {
+              targetRow.classList.add('selected');
+              targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
           }
-        });
-
-        state[side].searchMatches = matches;
-        state[side].searchIndex = matches.length > 0 ? 0 : -1;
-        countSpan.textContent = matches.length > 0 ? `1/${matches.length}` : '0/0';
-
-        if (matches.length > 0) {
-          matches[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
-          matches[0].classList.add('selected');
+          if (countSpan) countSpan.textContent = `${s.matchIndex + 1}/${s.treeMatches.length}`;
+        } else {
+          // Code / Table / Diff view
+          if (!s.codeMatches || s.codeMatches.length === 0 || s.matchIndex < 0) return;
+          const match = s.codeMatches[s.matchIndex];
+          if (match && textarea) {
+            textarea.focus();
+            textarea.setSelectionRange(match.start, match.end);
+            scrollTextareaToMatch(textarea, match.start);
+          }
+          if (countSpan) countSpan.textContent = `${s.matchIndex + 1}/${s.codeMatches.length}`;
         }
       }
 
-      function highlightTextNode(element, query) {
-        const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-        element.innerHTML = element.textContent.replace(regex, '<span class="tree-highlight">$1</span>');
-      }
-
       function navigateSearch(side, direction) {
-        const p = state[side];
-        if (!p.searchMatches || p.searchMatches.length === 0) return;
-        p.searchIndex += direction;
-        if (p.searchIndex < 0) p.searchIndex = p.searchMatches.length - 1;
-        if (p.searchIndex >= p.searchMatches.length) p.searchIndex = 0;
+        const s = searchState[side];
+        const currentView = state[side].view || 'code';
+        const total = (currentView === 'tree' ? s.treeMatches : s.codeMatches).length;
+        if (total === 0) return;
 
-        const countSpan = side === 'left' ? elements.leftSearchCount : elements.rightSearchCount;
-        countSpan.textContent = `${p.searchIndex + 1}/${p.searchMatches.length}`;
+        s.matchIndex += direction;
+        if (s.matchIndex < 0) s.matchIndex = total - 1;
+        if (s.matchIndex >= total) s.matchIndex = 0;
 
-        const match = p.searchMatches[p.searchIndex];
-        const container = side === 'left' ? elements.leftTreeView : elements.rightTreeView;
-        container.querySelectorAll('.tree-row.selected').forEach(r => r.classList.remove('selected'));
-        match.classList.add('selected');
-        match.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        focusCurrentMatch(side);
       }
 
-      elements.leftSearchInput.addEventListener('input', (e) => applyTreeSearch('left', e.target.value.trim()));
-      elements.leftSearchInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') navigateSearch('left', e.shiftKey ? -1 : 1);
-      });
-      elements.btnLeftSearchPrev.addEventListener('click', () => navigateSearch('left', -1));
-      elements.btnLeftSearchNext.addEventListener('click', () => navigateSearch('left', 1));
+      function executeReplace(side) {
+        const s = searchState[side];
+        const isLeft = side === 'left';
+        const replaceInput = isLeft ? elements.leftReplaceInput : elements.rightReplaceInput;
+        const textarea = isLeft ? elements.leftCodeTextarea : elements.rightCodeTextarea;
+        s.replaceText = replaceInput ? replaceInput.value : '';
 
-      elements.rightSearchInput.addEventListener('input', (e) => applyTreeSearch('right', e.target.value.trim()));
-      elements.rightSearchInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') navigateSearch('right', e.shiftKey ? -1 : 1);
+        if (!s.query) {
+          showToast('Please enter a search query to replace', 'warning');
+          return;
+        }
+
+        const regex = getSearchRegex(side);
+        if (!regex) return;
+
+        const currentView = state[side].view || 'code';
+
+        if (currentView === 'code' || currentView === 'table' || currentView === 'diff') {
+          if (!s.codeMatches || s.codeMatches.length === 0 || s.matchIndex < 0) {
+            executeSearch(side);
+            if (s.codeMatches.length === 0) {
+              showToast('No matching text found to replace', 'info');
+              return;
+            }
+          }
+
+          const match = s.codeMatches[s.matchIndex];
+          const text = textarea ? textarea.value : '';
+          
+          let replacement = s.replaceText;
+          if (s.isRegex) {
+            try {
+              replacement = match.text.replace(regex, s.replaceText);
+            } catch (e) {}
+          }
+
+          const newText = text.slice(0, match.start) + replacement + text.slice(match.end);
+          setPaneText(side, newText, false);
+          updateLineNumbers(side);
+
+          executeSearch(side, true);
+          showToast('Replaced 1 occurrence', 'success');
+        } else {
+          // Tree View single replace
+          const text = state[side].text || '';
+          let replaced = false;
+          let count = 0;
+          const targetIndex = s.matchIndex >= 0 ? s.matchIndex : 0;
+          const newText = text.replace(regex, (m) => {
+            if (count === targetIndex) {
+              replaced = true;
+              count++;
+              return s.replaceText;
+            }
+            count++;
+            return m;
+          });
+
+          if (replaced) {
+            setPaneText(side, newText, true);
+            executeSearch(side);
+            showToast('Replaced 1 occurrence', 'success');
+          } else {
+            showToast('No matches found to replace', 'info');
+          }
+        }
+      }
+
+      function executeReplaceAll(side) {
+        const s = searchState[side];
+        const isLeft = side === 'left';
+        const replaceInput = isLeft ? elements.leftReplaceInput : elements.rightReplaceInput;
+        s.replaceText = replaceInput ? replaceInput.value : '';
+
+        if (!s.query) {
+          showToast('Please enter a search query to replace', 'warning');
+          return;
+        }
+
+        const regex = getSearchRegex(side);
+        if (!regex) {
+          showToast('Invalid regular expression', 'error');
+          return;
+        }
+
+        const text = state[side].text || (isLeft ? elements.leftCodeTextarea.value : elements.rightCodeTextarea.value) || '';
+        let count = 0;
+
+        const newText = text.replace(regex, (match, ...args) => {
+          count++;
+          if (s.isRegex) {
+            return s.replaceText.replace(/\$(\d+|&)/g, (full, p1) => {
+              if (p1 === '&') return match;
+              const idx = parseInt(p1, 10);
+              return (idx > 0 && args[idx - 1] !== undefined) ? args[idx - 1] : full;
+            });
+          }
+          return s.replaceText;
+        });
+
+        if (count > 0) {
+          setPaneText(side, newText, true);
+          executeSearch(side);
+          showToast(`✨ Replaced ${count} occurrence${count > 1 ? 's' : ''} in ${side} pane`, 'success');
+        } else {
+          showToast('No matches found to replace', 'info');
+        }
+      }
+
+      function quickUnescapeEscapedStrings(side) {
+        const isLeft = side === 'left';
+        const textarea = isLeft ? elements.leftCodeTextarea : elements.rightCodeTextarea;
+        let txt = (state[side].text || (textarea ? textarea.value : '') || '').trim();
+        if (!txt) {
+          showToast('Nothing to unescape', 'info');
+          return;
+        }
+
+        let changed = false;
+
+        // If wrapped in outer quotes (e.g. "\"{\\\"key\\\": ...}\"")
+        if ((txt.startsWith('"') && txt.endsWith('"')) || (txt.startsWith("'") && txt.endsWith("'"))) {
+          try {
+            const parsedStr = JSON.parse(txt);
+            if (typeof parsedStr === 'string') {
+              txt = parsedStr;
+              changed = true;
+            }
+          } catch (e) {}
+        }
+
+        // Iteratively clean escaped quotes and backslashes
+        for (let i = 0; i < 6; i++) {
+          const prev = txt;
+          txt = txt.replace(/\\\\\\"/g, '"').replace(/\\\\"/g, '"').replace(/\\"/g, '"');
+          txt = txt.replace(/\\\\n/g, '\n').replace(/\\\\r/g, '\r').replace(/\\\\t/g, '\t');
+          txt = txt.replace(/\\\\\\\\/g, '\\').replace(/\\\\/g, '\\');
+          if (txt === prev) break;
+          changed = true;
+        }
+
+        // Try to parse and format
+        try {
+          const parsedObj = JSON.parse(txt);
+          setPaneData(side, parsedObj, true);
+          showToast('✨ Unescaped & formatted JSON successfully!', 'success');
+        } catch (e) {
+          setPaneText(side, txt, true);
+          if (changed) {
+            showToast('✨ Unescaped string characters in text', 'success');
+          } else {
+            showToast('No escaped sequences found to clean', 'info');
+          }
+        }
+      }
+
+      function toggleReplaceRow(side, forceShow) {
+        const s = searchState[side];
+        const isLeft = side === 'left';
+        const replaceRow = isLeft ? elements.leftReplaceRow : elements.rightReplaceRow;
+        const toggleBtn = isLeft ? elements.btnLeftToggleReplace : elements.btnRightToggleReplace;
+
+        if (forceShow !== undefined) {
+          s.showReplace = forceShow;
+        } else {
+          s.showReplace = !s.showReplace;
+        }
+
+        if (replaceRow) replaceRow.classList.toggle('active', s.showReplace);
+        if (toggleBtn) toggleBtn.classList.toggle('expanded', s.showReplace);
+
+        if (s.showReplace) {
+          const replaceInput = isLeft ? elements.leftReplaceInput : elements.rightReplaceInput;
+          if (replaceInput) replaceInput.focus();
+        }
+      }
+
+      function openSearch(side, openReplace = false) {
+        const isLeft = side === 'left';
+        const container = isLeft ? elements.leftSearchContainer : elements.rightSearchContainer;
+        const searchInput = isLeft ? elements.leftSearchInput : elements.rightSearchInput;
+        const replaceInput = isLeft ? elements.leftReplaceInput : elements.rightReplaceInput;
+
+        if (container) container.classList.add('active');
+        if (openReplace) {
+          toggleReplaceRow(side, true);
+          if (searchInput && searchInput.value.trim() && replaceInput) {
+            replaceInput.focus();
+            replaceInput.select();
+          } else if (searchInput) {
+            searchInput.focus();
+            searchInput.select();
+          }
+        } else if (searchInput) {
+          searchInput.focus();
+          searchInput.select();
+        }
+        executeSearch(side);
+      }
+
+      function closeSearch(side) {
+        const isLeft = side === 'left';
+        const container = isLeft ? elements.leftSearchContainer : elements.rightSearchContainer;
+        const searchInput = isLeft ? elements.leftSearchInput : elements.rightSearchInput;
+        if (container) container.classList.remove('active');
+        if (searchInput) searchInput.value = '';
+        executeSearch(side);
+      }
+
+      // Hook up search option buttons and input listeners
+      ['left', 'right'].forEach(side => {
+        const isLeft = side === 'left';
+        const s = searchState[side];
+        const searchInput = isLeft ? elements.leftSearchInput : elements.rightSearchInput;
+        const replaceInput = isLeft ? elements.leftReplaceInput : elements.rightReplaceInput;
+        const btnCase = isLeft ? elements.btnLeftSearchCase : elements.btnRightSearchCase;
+        const btnWord = isLeft ? elements.btnLeftSearchWord : elements.btnRightSearchWord;
+        const btnRegex = isLeft ? elements.btnLeftSearchRegex : elements.btnRightSearchRegex;
+        const btnPrev = isLeft ? elements.btnLeftSearchPrev : elements.btnRightSearchPrev;
+        const btnNext = isLeft ? elements.btnLeftSearchNext : elements.btnRightSearchNext;
+        const btnClose = isLeft ? elements.btnLeftSearchClose : elements.btnRightSearchClose;
+        const btnToggleRep = isLeft ? elements.btnLeftToggleReplace : elements.btnRightToggleReplace;
+        const btnRep = isLeft ? elements.btnLeftReplace : elements.btnRightReplace;
+        const btnRepAll = isLeft ? elements.btnLeftReplaceAll : elements.btnRightReplaceAll;
+        const btnQuickUnescape = isLeft ? elements.btnLeftQuickUnescape : elements.btnRightQuickUnescape;
+        const btnUnescapeMenu = isLeft ? elements.btnLeftUnescape : elements.btnRightUnescape;
+
+        if (searchInput) {
+          searchInput.addEventListener('input', () => executeSearch(side));
+          searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+              navigateSearch(side, e.shiftKey ? -1 : 1);
+            } else if (e.key === 'Escape') {
+              closeSearch(side);
+            } else if (e.altKey && e.key.toLowerCase() === 'c') {
+              e.preventDefault();
+              if (btnCase) btnCase.click();
+            } else if (e.altKey && e.key.toLowerCase() === 'w') {
+              e.preventDefault();
+              if (btnWord) btnWord.click();
+            } else if (e.altKey && e.key.toLowerCase() === 'r') {
+              e.preventDefault();
+              if (btnRegex) btnRegex.click();
+            }
+          });
+        }
+
+        if (replaceInput) {
+          replaceInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+              if (e.ctrlKey || e.metaKey) {
+                executeReplaceAll(side);
+              } else {
+                executeReplace(side);
+              }
+            } else if (e.key === 'Escape') {
+              closeSearch(side);
+            }
+          });
+        }
+
+        if (btnCase) {
+          btnCase.addEventListener('click', () => {
+            s.caseSensitive = !s.caseSensitive;
+            btnCase.classList.toggle('active', s.caseSensitive);
+            executeSearch(side);
+          });
+        }
+        if (btnWord) {
+          btnWord.addEventListener('click', () => {
+            s.wholeWord = !s.wholeWord;
+            btnWord.classList.toggle('active', s.wholeWord);
+            executeSearch(side);
+          });
+        }
+        if (btnRegex) {
+          btnRegex.addEventListener('click', () => {
+            s.isRegex = !s.isRegex;
+            btnRegex.classList.toggle('active', s.isRegex);
+            executeSearch(side);
+          });
+        }
+
+        if (btnPrev) btnPrev.addEventListener('click', () => navigateSearch(side, -1));
+        if (btnNext) btnNext.addEventListener('click', () => navigateSearch(side, 1));
+        if (btnClose) btnClose.addEventListener('click', () => closeSearch(side));
+        if (btnToggleRep) btnToggleRep.addEventListener('click', () => toggleReplaceRow(side));
+        if (btnRep) btnRep.addEventListener('click', () => executeReplace(side));
+        if (btnRepAll) btnRepAll.addEventListener('click', () => executeReplaceAll(side));
+        if (btnQuickUnescape) btnQuickUnescape.addEventListener('click', () => quickUnescapeEscapedStrings(side));
+        if (btnUnescapeMenu) btnUnescapeMenu.addEventListener('click', () => quickUnescapeEscapedStrings(side));
       });
-      elements.btnRightSearchPrev.addEventListener('click', () => navigateSearch('right', -1));
-      elements.btnRightSearchNext.addEventListener('click', () => navigateSearch('right', 1));
 
       // --- MULTI-TABLE VIEW ENGINE ---
       const tableViewState = {
@@ -4845,7 +5402,8 @@
                         } else {
                           cellContent = escapeHtml(String(val));
                         }
-                        rowHtml += `<td class="cell-interactive" data-cell-path="${escapeHtml(cellPath)}" data-cell-val="${escapeHtml(typeof val === 'object' ? JSON.stringify(val) : String(val))}" title="Click to copy JSON Path: ${escapeHtml(cellPath)}">${cellContent}</td>`;
+                        const rawValStr = val === undefined ? '' : (val === null ? 'null' : (typeof val === 'object' ? JSON.stringify(val) : String(val)));
+                        rowHtml += `<td class="cell-interactive" data-cell-path="${escapeHtml(cellPath)}" data-cell-val="${escapeHtml(rawValStr)}" title="Click to copy value: ${escapeHtml(rawValStr)}">${cellContent}</td>`;
                       });
                       rowHtml += `</tr>`;
                       return rowHtml;
@@ -4983,19 +5541,21 @@
           });
         });
 
-        // Cell Click: update breadcrumb, select & copy path
+        // Cell Click: update breadcrumb, select & copy value
         container.querySelectorAll('td[data-cell-path]').forEach(td => {
           td.addEventListener('click', (e) => {
             if (e.target.closest('button')) return;
             const cellPath = td.dataset.cellPath;
+            const cellVal = td.dataset.cellVal !== undefined ? td.dataset.cellVal : '';
             state[side].selectedPath = cellPath;
             updateStatusBar(side);
 
             container.querySelectorAll('td.cell-selected').forEach(c => c.classList.remove('cell-selected'));
             td.classList.add('cell-selected');
 
-            navigator.clipboard.writeText(cellPath);
-            showToast(`Copied JSON Path: ${cellPath}`, 'success');
+            navigator.clipboard.writeText(cellVal);
+            const preview = cellVal.length > 60 ? cellVal.substring(0, 60) + '...' : cellVal;
+            showToast(`Copied value: "${preview}"`, 'success');
           });
         });
 
@@ -5585,7 +6145,8 @@
               }
             }
 
-            html += `<td class="cell-interactive" data-studio-cell-path="${escapeHtml(cellPath)}" data-studio-row-idx="${idx}" data-studio-col="${escapeHtml(col)}" data-studio-cell-val="${escapeHtml(typeof val === 'object' ? JSON.stringify(val) : String(val))}" title="Click to copy JSON Path: ${escapeHtml(cellPath)}">${cellContent}</td>`;
+            const rawValStr = val === undefined ? '' : (val === null ? 'null' : (typeof val === 'object' ? JSON.stringify(val) : String(val)));
+            html += `<td class="cell-interactive" data-studio-cell-path="${escapeHtml(cellPath)}" data-studio-row-idx="${idx}" data-studio-col="${escapeHtml(col)}" data-studio-cell-val="${escapeHtml(rawValStr)}" title="Click to copy value: ${escapeHtml(rawValStr)}">${cellContent}</td>`;
           });
           html += `</tr>`;
         });
@@ -5630,7 +6191,7 @@
           td.addEventListener('click', (e) => {
             if (e.target.closest('button')) return;
             const path = td.dataset.studioCellPath;
-            const val = td.dataset.studioCellVal;
+            const val = td.dataset.studioCellVal !== undefined ? td.dataset.studioCellVal : '';
             const rowIdx = td.dataset.studioRowIdx !== undefined ? parseInt(td.dataset.studioRowIdx, 10) : null;
             const col = td.dataset.studioCol;
 
@@ -5648,8 +6209,11 @@
 
             wrapper.querySelectorAll('td.cell-selected').forEach(c => c.classList.remove('cell-selected'));
             td.classList.add('cell-selected');
-            navigator.clipboard.writeText(fullPath || path);
-            showToast(`Copied JSON Path: ${fullPath || path}`, 'success');
+
+            // Copy cell value to clipboard
+            navigator.clipboard.writeText(val);
+            const preview = val.length > 60 ? val.substring(0, 60) + '...' : val;
+            showToast(`Copied value: "${preview}"`, 'success');
           });
         });
 
@@ -6156,17 +6720,30 @@
         showToast(`Copied Full JSON Path: ${fullPath}`, 'success');
       });
 
-      elements.studioBtnCopySelectedPath.addEventListener('click', () => {
-        const rootData = state[tableStudioState.side]?.data;
-        const fullPath = findFullJsonPathInRoot(
-          rootData,
-          tableStudioState.tableName,
-          tableStudioState.selectedRowIdx,
-          tableStudioState.selectedCol
-        );
-        navigator.clipboard.writeText(fullPath);
-        showToast(`Copied Full JSON Path: ${fullPath}`, 'success');
-      });
+      if (elements.studioBtnCopyValue) {
+        elements.studioBtnCopyValue.addEventListener('click', () => {
+          const val = tableStudioState.selectedCellVal !== undefined && tableStudioState.selectedCellVal !== null ? tableStudioState.selectedCellVal : '';
+          navigator.clipboard.writeText(val);
+          const preview = val.length > 60 ? val.substring(0, 60) + '...' : val;
+          showToast(`Copied value: "${preview}"`, 'success');
+        });
+      }
+
+      if (elements.studioBtnCopySelectedPath) {
+        elements.studioBtnCopySelectedPath.addEventListener('click', () => {
+          const relPath = tableStudioState.selectedCellPath;
+          const rootData = state[tableStudioState.side]?.data;
+          const fullPath = findFullJsonPathInRoot(
+            rootData,
+            tableStudioState.tableName,
+            tableStudioState.selectedRowIdx,
+            tableStudioState.selectedCol
+          );
+          const pathToCopy = relPath || fullPath;
+          navigator.clipboard.writeText(pathToCopy);
+          showToast(`Copied Path: ${pathToCopy}`, 'success');
+        });
+      }
 
       if (elements.studioBtnCopyFullPath) {
         elements.studioBtnCopyFullPath.addEventListener('click', () => {
@@ -6479,6 +7056,9 @@
             diffView.style.display = view === 'diff' ? 'block' : 'none';
           }
           renderPane(side);
+          if (searchState[side] && searchState[side].query) {
+            executeSearch(side, true);
+          }
           saveSessionToLocalStorage();
         };
 
@@ -6502,6 +7082,9 @@
         setPaneText('left', elements.leftCodeTextarea.value, false);
         updateLineNumbers('left');
         updateStatusBar('left');
+        if (searchState.left && searchState.left.query && elements.leftSearchContainer.classList.contains('active')) {
+          executeSearch('left', true);
+        }
         saveSessionToLocalStorage();
       });
       elements.leftCodeTextarea.addEventListener('change', () => {
@@ -6515,6 +7098,9 @@
         setPaneText('right', elements.rightCodeTextarea.value, false);
         updateLineNumbers('right');
         updateStatusBar('right');
+        if (searchState.right && searchState.right.query && elements.rightSearchContainer.classList.contains('active')) {
+          executeSearch('right', true);
+        }
         saveSessionToLocalStorage();
       });
       elements.rightCodeTextarea.addEventListener('change', () => {
@@ -6752,21 +7338,19 @@
 
       // Search & Replace Bars
       elements.btnLeftSearch.addEventListener('click', () => {
-        elements.leftSearchContainer.classList.toggle('active');
-        if (elements.leftSearchContainer.classList.contains('active')) elements.leftSearchInput.focus();
-      });
-      elements.btnLeftSearchClose.addEventListener('click', () => {
-        elements.leftSearchContainer.classList.remove('active');
-        applyTreeSearch('left', '');
+        if (elements.leftSearchContainer.classList.contains('active')) {
+          closeSearch('left');
+        } else {
+          openSearch('left', false);
+        }
       });
 
       elements.btnRightSearch.addEventListener('click', () => {
-        elements.rightSearchContainer.classList.toggle('active');
-        if (elements.rightSearchContainer.classList.contains('active')) elements.rightSearchInput.focus();
-      });
-      elements.btnRightSearchClose.addEventListener('click', () => {
-        elements.rightSearchContainer.classList.remove('active');
-        applyTreeSearch('right', '');
+        if (elements.rightSearchContainer.classList.contains('active')) {
+          closeSearch('right');
+        } else {
+          openSearch('right', false);
+        }
       });
 
       // Modals Setup
@@ -7132,16 +7716,30 @@ ORD-1004,Diana Prince,Electronics,79.00,2,true,2026-08-14`;
       });
 
       // Global Keyboard Shortcuts
+      function getActiveSide() {
+        const activeEl = document.activeElement;
+        if (activeEl && (elements.paneRight.contains(activeEl) || activeEl === elements.rightSearchInput || activeEl === elements.rightReplaceInput)) {
+          return 'right';
+        }
+        return state.activeTargetPane || 'left';
+      }
+
       window.addEventListener('keydown', (e) => {
-        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+        const side = getActiveSide();
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f' && !e.shiftKey) {
           e.preventDefault();
-          elements.btnLeftSearch.click();
+          openSearch(side, false);
+        } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'h') {
+          e.preventDefault();
+          openSearch(side, true);
         } else if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'f') {
           e.preventDefault();
-          elements.btnLeftFormat.click();
+          if (side === 'right') elements.btnRightFormat.click();
+          else elements.btnLeftFormat.click();
         } else if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'm') {
           e.preventDefault();
-          elements.btnLeftMinify.click();
+          if (side === 'right') elements.btnRightMinify.click();
+          else elements.btnLeftMinify.click();
         }
       });
 
