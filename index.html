@@ -2233,7 +2233,7 @@
         <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
           <button class="btn btn-sm btn-ghost" id="studioBtnCopyValue" title="Copy value of selected cell">📋 Copy Value</button>
           <button class="btn btn-sm btn-ghost" id="studioBtnCopySelectedPath" title="Copy relative path of selected cell">📍 Copy Path</button>
-          <button class="btn btn-sm btn-ghost" id="studioBtnCopyFullPath" title="Copy full root-to-leaf JSON Path (e.g. $.application[0].appl_party[0].id)">📑 Copy Full JSON Path</button>
+          <button class="btn btn-sm btn-ghost" id="studioBtnCopyFullPath" title="Copy full root-to-leaf JSON Path (e.g. $.orders[0].items[0].id)">📑 Copy Full JSON Path</button>
           <button class="btn btn-sm btn-primary" id="btnCloseModalTableStudio2">Close Focus</button>
         </div>
       </div>
@@ -3192,7 +3192,7 @@
           const c = String(col).toLowerCase().trim();
           if (isChildCol(col)) return 1000; // child tables always at the very end
           if (c === 'id') return 1;
-          if (c === 'application_id') return 2;
+          if (c.endsWith('_id') || c.endsWith('id')) return 2; // general ID / foreign key field
           if (c.endsWith('_seq') || c === 'seq' || c.endsWith('_seq_no') || c.endsWith('_seqno') || c.endsWith('_sequence')) return 3;
           return 10; // normal data fields
         };
@@ -4162,16 +4162,54 @@
         if (!sourceData || typeof sourceData !== 'object') return null;
 
         const allTableKeys = Object.keys(sourceData).filter(k => Array.isArray(sourceData[k]));
-        let currTable = rootTableName || (allTableKeys.includes('application') ? 'application' : allTableKeys[0]);
+        if (allTableKeys.length === 0) return null;
 
-        // Helper 1: Check embedded child array properties inside rows
+        let currTable = rootTableName || allTableKeys[0];
+
+        // 1. Check user-defined hierarchy definition if present
+        const defTextToUse = userDefText || (elements && elements.hierarchyInputText ? elements.hierarchyInputText.value : '');
+        if (defTextToUse && defTextToUse.trim()) {
+          try {
+            const parsedTree = parseHierarchyText(defTextToUse.trim());
+            if (parsedTree && parsedTree.length > 0) {
+              let matchCount = 0;
+              function checkMatch(nodes) {
+                if (!nodes) return;
+                nodes.forEach(n => {
+                  if (allTableKeys.includes(n.name) || (sourceData && n.name in sourceData)) matchCount++;
+                  if (n.children) checkMatch(n.children);
+                });
+              }
+              checkMatch(parsedTree);
+
+              if (matchCount > 0) {
+                function enrichTreeWithCounts(nodes) {
+                  if (!nodes) return [];
+                  return nodes.map(node => {
+                    const rows = getEntityRowsFromSource(sourceData, node.name);
+                    return {
+                      ...node,
+                      rowCount: rows ? rows.length : 0,
+                      rows: rows || [],
+                      children: enrichTreeWithCounts(node.children || [])
+                    };
+                  });
+                }
+
+                return enrichTreeWithCounts(parsedTree);
+              }
+            }
+          } catch (e) {}
+        }
+
+        // 2. Check physical embedded child array properties inside rows
         function getEmbeddedChildKeys(rows) {
           if (!rows || rows.length === 0) return [];
           const childKeys = new Set();
           rows.forEach(r => {
             if (r && typeof r === 'object') {
               Object.entries(r).forEach(([k, v]) => {
-                if (Array.isArray(v) && v.length >= 0) childKeys.add(k);
+                if (Array.isArray(v)) childKeys.add(k);
               });
             }
           });
@@ -4212,192 +4250,79 @@
           }
         }
 
-        // Helper 2: Check user-defined hierarchy definition if present
-        const defTextToUse = userDefText || (elements && elements.hierarchyInputText ? elements.hierarchyInputText.value : '');
-        if (defTextToUse && defTextToUse.trim()) {
-          try {
-            const parsedTree = parseHierarchyText(defTextToUse.trim());
-            if (parsedTree && parsedTree.length > 0) {
-              let matchCount = 0;
-              function checkMatch(nodes) {
-                if (!nodes) return;
-                nodes.forEach(n => {
-                  if (allTableKeys.includes(n.name) || (sourceData && n.name in sourceData)) matchCount++;
-                  if (n.children) checkMatch(n.children);
-                });
-              }
-              checkMatch(parsedTree);
-
-              if (matchCount > 0) {
-                function findSubNode(nodes, targetName) {
-                  if (!nodes) return null;
-                  for (let n of nodes) {
-                    if (n.name === targetName) return n;
-                    if (n.children) {
-                      const found = findSubNode(n.children, targetName);
-                      if (found) return found;
-                    }
-                  }
-                  return null;
-                }
-
-                const targetSub = (currTable && currTable !== parsedTree[0]?.name)
-                  ? findSubNode(parsedTree, currTable)
-                  : null;
-                const treeToUse = targetSub ? [targetSub] : parsedTree;
-
-                function enrichTreeWithCounts(nodes) {
-                  if (!nodes) return [];
-                  return nodes.map(node => {
-                    const rows = getEntityRowsFromSource(sourceData, node.name);
-                    return {
-                      ...node,
-                      rowCount: rows ? rows.length : 0,
-                      children: enrichTreeWithCounts(node.children || [])
-                    };
-                  });
-                }
-
-                return enrichTreeWithCounts(treeToUse);
-              }
-            }
-          } catch (e) {}
-        }
-
-        // Helper 3: Relational foreign key mapping across all dataset tables
-        if (allTableKeys.length > 1) {
-          const childToParent = new Map();
-
-          allTableKeys.forEach(tbl => {
-            const rows = sourceData[tbl];
-            if (!rows || rows.length === 0 || typeof rows[0] !== 'object') return;
-            const cols = Object.keys(rows[0]);
-
-            let bestParent = null;
-            let bestScore = -1;
-            let bestFk = null;
-            let bestPk = null;
-
-            for (let otherTbl of allTableKeys) {
-              if (otherTbl === tbl) continue;
-              const pClean = otherTbl.toLowerCase().replace(/s$/, '').replace(/^tbl_/, '').replace(/^appl_/, '');
-              const otherRows = sourceData[otherTbl];
-              const pCols = (otherRows && otherRows.length > 0 && typeof otherRows[0] === 'object')
-                ? Object.keys(otherRows[0])
-                : ['id'];
-
-              const directFks = [
-                `${otherTbl}_id`, `${otherTbl}Id`,
-                `${pClean}_id`, `${pClean}Id`,
-                `party_id`, `account_id`, `op_id`, `task_id`, `followup_id`,
-                `collateral_id`, `collateral_realestate_id`, `financialinfo_id`,
-                `appl_party_id`, `appl_account_id`, `op_loans_id`, `op_loan_id`, `op_contract_id`,
-                `application_id`, `applicationId`
-              ];
-
-              for (let fk of directFks) {
-                if (cols.includes(fk)) {
-                  let score = 10;
-                  if (fk === `${otherTbl}_id` || fk === `${otherTbl}Id`) score = 100;
-                  else if (tbl.startsWith(otherTbl)) score = 80;
-                  else if (fk !== 'application_id') score = 50;
-                  else score = 10;
-
-                  if (score > bestScore) {
-                    bestScore = score;
-                    bestParent = otherTbl;
-                    bestFk = fk;
-                    bestPk = pCols.includes('id') ? 'id' : (pCols.includes(fk) ? fk : pCols[0]);
-                  }
-                }
-              }
-            }
-
-            if (bestParent) {
-              childToParent.set(tbl, { parent: bestParent, childFk: bestFk, parentPk: bestPk });
-            }
-          });
-
-          let root = currTable;
-          if (!root || !allTableKeys.includes(root)) {
-            if (allTableKeys.includes('application')) root = 'application';
-            else if (allTableKeys.includes('orders')) root = 'orders';
-            else {
-              const rootCandidates = allTableKeys.filter(t => !childToParent.has(t) && t !== '_system');
-              root = rootCandidates[0] || allTableKeys[0];
-            }
-          }
-
-          function buildRelationalTree(tblName, visited = new Set()) {
-            if (visited.has(tblName)) return null;
-            visited.add(tblName);
-
-            const rows = sourceData[tblName] || [];
-            const directChildren = allTableKeys.filter(t => {
-              const rel = childToParent.get(t);
-              return rel && rel.parent === tblName;
-            });
-
-            const childNodes = [];
-            directChildren.forEach(cTbl => {
-              const cNode = buildRelationalTree(cTbl, new Set(visited));
-              if (cNode) {
-                const rel = childToParent.get(cTbl);
-                if (rel) cNode.mappings = [{ childField: rel.childFk, parentField: rel.parentPk }];
-                childNodes.push(cNode);
-              }
-            });
-
-            return {
-              name: tblName,
-              children: childNodes,
-              rowCount: rows.length
-            };
-          }
-
-          const relTree = buildRelationalTree(root);
-          if (relTree) {
-            return [relTree];
-          }
-        }
-
-        const singleRows = Array.isArray(sourceData) ? sourceData : (sourceData[currTable] || []);
-        return [{
-          name: currTable,
-          children: [],
-          rowCount: singleRows.length
-        }];
+        // 3. No configured hierarchy & No physical embedded nesting:
+        // Return ALL tables as flat peer nodes at level 0 (without fake relationships or hardcoded domain guessing)
+        return allTableKeys.map(tblName => {
+          const rows = Array.isArray(sourceData[tblName]) ? sourceData[tblName] : [];
+          return {
+            name: tblName,
+            children: [],
+            rowCount: rows.length,
+            rows: rows
+          };
+        });
       }
 
       function autoDetectHierarchyFromData(data) {
-        if (!data || typeof data !== 'object') return 'orders\n- order_items [order_id = id]\n- order_shipping [order_id = id]';
+        if (!data || typeof data !== 'object') return '';
         if (Array.isArray(data)) return 'items';
 
-        const tree = buildDatasetHierarchyTree(data);
-        if (!tree || tree.length === 0) {
-          const keys = Object.keys(data);
-          return keys.length > 0 ? keys.map((k, i) => i === 0 ? k : `- ${k}`).join('\n') : 'items';
+        const allTableKeys = Object.keys(data).filter(k => Array.isArray(data[k]));
+        if (allTableKeys.length === 0) return Object.keys(data).join('\n');
+
+        const claimedAsChild = new Set();
+        const dynamicRelations = new Map(); // child -> { parent, childFk, parentPk }
+
+        allTableKeys.forEach(tbl => {
+          const rows = data[tbl];
+          if (!rows || rows.length === 0 || typeof rows[0] !== 'object') return;
+          const cols = Object.keys(rows[0]);
+
+          for (let otherTbl of allTableKeys) {
+            if (otherTbl === tbl) continue;
+            const otherRows = data[otherTbl];
+            const pCols = (otherRows && otherRows.length > 0 && typeof otherRows[0] === 'object')
+              ? Object.keys(otherRows[0])
+              : ['id'];
+            const pk = pCols.includes('id') ? 'id' : pCols[0];
+
+            const pClean = otherTbl.toLowerCase().replace(/s$/, '').replace(/^tbl_/, '');
+            const possibleFks = [`${otherTbl}_id`, `${otherTbl}Id`, `${pClean}_id`, `${pClean}Id`];
+
+            for (let fk of possibleFks) {
+              if (cols.includes(fk)) {
+                dynamicRelations.set(tbl, { parent: otherTbl, childFk: fk, parentPk: pk });
+                claimedAsChild.add(tbl);
+                break;
+              }
+            }
+            if (dynamicRelations.has(tbl)) break;
+          }
+        });
+
+        if (dynamicRelations.size > 0) {
+          const lines = [];
+          function buildText(parentName, indent = 0) {
+            const pad = '  '.repeat(indent);
+            if (indent === 0) lines.push(parentName);
+            const children = allTableKeys.filter(t => {
+              const rel = dynamicRelations.get(t);
+              return rel && rel.parent === parentName;
+            });
+            children.forEach(c => {
+              const rel = dynamicRelations.get(c);
+              lines.push(`${pad}  - ${c} [${rel.childFk} = ${rel.parentPk}]`);
+              buildText(c, indent + 1);
+            });
+          }
+
+          const roots = allTableKeys.filter(t => !claimedAsChild.has(t));
+          (roots.length > 0 ? roots : [allTableKeys[0]]).forEach(r => buildText(r, 0));
+          return lines.join('\n');
         }
 
-        const lines = [];
-        function treeToText(nodes, indent = 0) {
-          nodes.forEach(n => {
-            const pad = '  '.repeat(indent);
-            const cond = (n.mappings && n.mappings.length > 0)
-              ? ` [${n.mappings.map(m => `${m.childField} = ${m.parentField}`).join(', ')}]`
-              : '';
-            if (indent === 0) {
-              lines.push(`${n.name}${cond}`);
-            } else {
-              lines.push(`${pad}- ${n.name}${cond}`);
-            }
-            if (n.children && n.children.length > 0) {
-              treeToText(n.children, indent + 1);
-            }
-          });
-        }
-        treeToText(tree, 0);
-        return lines.join('\n');
+        // If no relationships detected, return flat list of tables
+        return allTableKeys.join('\n');
       }
 
       elements.btnOpenHierarchy.addEventListener('click', () => {
@@ -4405,7 +4330,7 @@
           elements.modalHierarchy.classList.add('active');
           if (!elements.hierarchyInputText.value.trim()) {
             const autoHier = autoDetectHierarchyFromData(state.left.data);
-            elements.hierarchyInputText.value = autoHier || `orders\n- order_items [order_id = id]\n- order_shipping [order_id = id]`;
+            elements.hierarchyInputText.value = autoHier || '';
           }
           updateHierarchyLivePreview(true);
         });
