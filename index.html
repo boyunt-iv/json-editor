@@ -1546,7 +1546,7 @@
         </div>
 
         <div class="pane-toolbar">
-          <button class="btn btn-sm btn-icon" id="btnLeftSearch" title="Search (Ctrl+F)">
+          <button class="btn btn-sm btn-icon" id="btnLeftSearch" title="Find / Replace in Pane">
             <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           </button>
           <button class="btn btn-sm" id="btnLeftFormat" title="Format / Prettify (2 spaces)">
@@ -1586,12 +1586,12 @@
       <div class="search-container" id="leftSearchContainer">
         <!-- Row 1: Find -->
         <div class="search-row">
-          <button class="btn btn-sm btn-icon btn-ghost search-toggle-btn" id="btnLeftToggleReplace" title="Toggle Replace Bar (Ctrl+H)">
+          <button class="btn btn-sm btn-icon btn-ghost search-toggle-btn" id="btnLeftToggleReplace" title="Toggle Replace Bar">
             <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
           </button>
           <div class="search-input-wrap">
             <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" class="search-input" id="leftSearchInput" placeholder="Find in JSON (Ctrl+F)..." spellcheck="false" />
+            <input type="text" class="search-input" id="leftSearchInput" placeholder="Find in JSON..." spellcheck="false" />
             <div class="search-options">
               <button class="search-opt-btn" id="btnLeftSearchCase" title="Match Case (Alt+C)">Aa</button>
               <button class="search-opt-btn" id="btnLeftSearchWord" title="Match Whole Word (Alt+W)">\b</button>
@@ -1680,7 +1680,7 @@
         </div>
 
         <div class="pane-toolbar">
-          <button class="btn btn-sm btn-icon" id="btnRightSearch" title="Search (Ctrl+F)">
+          <button class="btn btn-sm btn-icon" id="btnRightSearch" title="Find / Replace in Pane">
             <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           </button>
           <button class="btn btn-sm" id="btnRightFormat" title="Format / Prettify (2 spaces)">
@@ -1720,12 +1720,12 @@
       <div class="search-container" id="rightSearchContainer">
         <!-- Row 1: Find -->
         <div class="search-row">
-          <button class="btn btn-sm btn-icon btn-ghost search-toggle-btn" id="btnRightToggleReplace" title="Toggle Replace Bar (Ctrl+H)">
+          <button class="btn btn-sm btn-icon btn-ghost search-toggle-btn" id="btnRightToggleReplace" title="Toggle Replace Bar">
             <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
           </button>
           <div class="search-input-wrap">
             <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" class="search-input" id="rightSearchInput" placeholder="Find in JSON (Ctrl+F)..." spellcheck="false" />
+            <input type="text" class="search-input" id="rightSearchInput" placeholder="Find in JSON..." spellcheck="false" />
             <div class="search-options">
               <button class="search-opt-btn" id="btnRightSearchCase" title="Match Case (Alt+C)">Aa</button>
               <button class="search-opt-btn" id="btnRightSearchWord" title="Match Whole Word (Alt+W)">\b</button>
@@ -3188,13 +3188,28 @@
           return false;
         };
 
+        const isAuditCol = (c) => {
+          return c.includes('create_date') || c.includes('created_by') || 
+                 c.includes('update_date') || c.includes('updated_by') || 
+                 c.includes('migrate_date') || c.includes('is_deleted') || 
+                 c.includes('deleted_at');
+        };
+
+        const isSeqCol = (c) => {
+          return c === 'seq' || c.endsWith('_seq') || c.startsWith('seq_') || 
+                 c.includes('_seq_') || c.endsWith('_seqno') || c.endsWith('_seq_no') || 
+                 c.endsWith('_sequence') || c.includes('sequence');
+        };
+
         const getPriority = (col) => {
           const c = String(col).toLowerCase().trim();
-          if (isChildCol(col)) return 1000; // child tables always at the very end
-          if (c === 'id') return 1;
-          if (c.endsWith('_id') || c.endsWith('id')) return 2; // general ID / foreign key field
-          if (c.endsWith('_seq') || c === 'seq' || c.endsWith('_seq_no') || c.endsWith('_seqno') || c.endsWith('_sequence')) return 3;
-          return 10; // normal data fields
+          if (isChildCol(col)) return 1000; // child tables / complex objects always at the very end
+          if (c === 'id') return 1; // Primary Table ID
+          if (c === 'application_id') return 2; // Application Primary Reference
+          if (isSeqCol(c)) return 3; // Sequences and ordering numbers (*_seq, sequence, etc.)
+          if (isAuditCol(c)) return 100; // Audit & system metadata fields (create/update dates, etc.)
+          if (c.endsWith('_id') || c.endsWith('id')) return 4; // Other foreign keys / entity IDs
+          return 10; // Normal data and business fields (sorted alphabetically A-Z)
         };
 
         return [...cols].sort((a, b) => {
@@ -3205,71 +3220,96 @@
         });
       }
 
+      const entityRowsSourceCache = new WeakMap();
+
       function getEntityRowsFromSource(sourceData, entityName) {
         if (!sourceData || !entityName) return [];
         
+        let cache = entityRowsSourceCache.get(sourceData);
+        if (!cache) {
+          cache = new Map();
+          entityRowsSourceCache.set(sourceData, cache);
+        }
+        const key = String(entityName).toLowerCase().trim();
+        if (cache.has(key)) return cache.get(key);
+
         // 1. Direct array or top-level match
         if (Array.isArray(sourceData)) {
-          if (entityName === 'items' || entityName === 'rows' || entityName === 'data' || entityName === 'Root Dataset') return sourceData;
+          if (entityName === 'items' || entityName === 'rows' || entityName === 'data' || entityName === 'Root Dataset') {
+            cache.set(key, sourceData);
+            return sourceData;
+          }
         } else if (typeof sourceData === 'object' && sourceData !== null) {
-          if (Array.isArray(sourceData[entityName])) return sourceData[entityName];
+          if (Array.isArray(sourceData[entityName])) {
+            cache.set(key, sourceData[entityName]);
+            return sourceData[entityName];
+          }
           for (let k in sourceData) {
-            if (k.toLowerCase() === entityName.toLowerCase() && Array.isArray(sourceData[k])) {
+            if (k.toLowerCase() === key && Array.isArray(sourceData[k])) {
+              cache.set(key, sourceData[k]);
               return sourceData[k];
             }
           }
         }
 
-        // 2. Recursive Deep Collection from embedded arrays
-        const collected = [];
+        // 2. Level-by-level (Breadth-First) search for embedded entity collection
+        let queue = [sourceData];
         const visited = new Set();
+        const collected = [];
 
-        function searchDeep(curr) {
-          if (!curr || typeof curr !== 'object' || visited.has(curr)) return;
-          visited.add(curr);
+        while (queue.length > 0) {
+          const nextQueue = [];
 
-          if (Array.isArray(curr)) {
-            curr.forEach(item => {
-              if (item && typeof item === 'object') {
-                if (Array.isArray(item[entityName])) {
-                  collected.push(...item[entityName]);
-                } else {
+          for (let curr of queue) {
+            if (!curr || typeof curr !== 'object' || visited.has(curr)) continue;
+            visited.add(curr);
+
+            if (Array.isArray(curr)) {
+              curr.forEach(item => {
+                if (item && typeof item === 'object') {
+                  if (Array.isArray(item[entityName])) {
+                    collected.push(...item[entityName]);
+                  } else {
+                    for (let k in item) {
+                      if (k.toLowerCase() === key && Array.isArray(item[k])) {
+                        collected.push(...item[k]);
+                        break;
+                      }
+                    }
+                  }
                   for (let k in item) {
-                    if (k.toLowerCase() === entityName.toLowerCase() && Array.isArray(item[k])) {
-                      collected.push(...item[k]);
+                    if (k !== entityName && typeof item[k] === 'object' && item[k] !== null) {
+                      nextQueue.push(item[k]);
                     }
                   }
                 }
-                // Recurse into item child properties
-                for (let k in item) {
-                  if (typeof item[k] === 'object' && item[k] !== null) {
-                    searchDeep(item[k]);
+              });
+            } else {
+              if (Array.isArray(curr[entityName])) {
+                collected.push(...curr[entityName]);
+              } else {
+                for (let k in curr) {
+                  if (k.toLowerCase() === key && Array.isArray(curr[k])) {
+                    collected.push(...curr[k]);
+                    break;
                   }
                 }
               }
-            });
-          } else {
-            // Object
-            if (Array.isArray(curr[entityName])) {
-              collected.push(...curr[entityName]);
-            } else {
               for (let k in curr) {
-                if (k.toLowerCase() === entityName.toLowerCase() && Array.isArray(curr[k])) {
-                  collected.push(...curr[k]);
+                if (k !== entityName && typeof curr[k] === 'object' && curr[k] !== null) {
+                  nextQueue.push(curr[k]);
                 }
               }
             }
-            // Recurse into object properties
-            for (let k in curr) {
-              if (typeof curr[k] === 'object' && curr[k] !== null) {
-                searchDeep(curr[k]);
-              }
-            }
           }
-        }
 
-        searchDeep(sourceData);
-        if (collected.length > 0) return collected;
+          if (collected.length > 0) {
+            cache.set(key, collected);
+            return collected;
+          }
+
+          queue = nextQueue;
+        }
 
         // 3. Fallback: single object wrapped in array
         const singleObjs = [];
@@ -3282,6 +3322,7 @@
           } else {
             if (curr[entityName] && typeof curr[entityName] === 'object' && !Array.isArray(curr[entityName])) {
               singleObjs.push(curr[entityName]);
+              return;
             }
             for (let k in curr) {
               if (typeof curr[k] === 'object' && curr[k] !== null) {
@@ -3291,8 +3332,12 @@
           }
         }
         searchSingleObj(sourceData);
-        if (singleObjs.length > 0) return singleObjs;
+        if (singleObjs.length > 0) {
+          cache.set(key, singleObjs);
+          return singleObjs;
+        }
 
+        cache.set(key, []);
         return [];
       }
 
@@ -3306,6 +3351,7 @@
 
       function getNodeSubtreeRowCount(node, sourceData) {
         if (!node) return 0;
+        if (node.subtreeCount !== undefined) return node.subtreeCount;
         let count = 0;
         if (node.rowCount !== undefined) {
           count += node.rowCount;
@@ -3318,6 +3364,7 @@
             count += getNodeSubtreeRowCount(c, sourceData);
           });
         }
+        node.subtreeCount = count;
         return count;
       }
 
@@ -4187,11 +4234,18 @@
                   if (!nodes) return [];
                   return nodes.map(node => {
                     const rows = getEntityRowsFromSource(sourceData, node.name);
+                    const rowCount = rows ? rows.length : 0;
+                    const children = enrichTreeWithCounts(node.children || []);
+                    let subtreeCount = rowCount;
+                    children.forEach(c => {
+                      subtreeCount += (c.subtreeCount || 0);
+                    });
                     return {
                       ...node,
-                      rowCount: rows ? rows.length : 0,
+                      rowCount,
                       rows: rows || [],
-                      children: enrichTreeWithCounts(node.children || [])
+                      subtreeCount,
+                      children
                     };
                   });
                 }
@@ -6334,7 +6388,29 @@
         const sourceData = state[side]?.data;
         const container = elements.studioSidebarTreeContainer;
         if (!container || !sourceData) return;
+
+        const currentKey = `${side}_${studioSideFilterQuery}_${studioSideHideZero}`;
+        if (container.dataset.renderedKey === currentKey) {
+          // Fast path: tree DOM already rendered, simply update active selection instantly!
+          const activeItems = container.querySelectorAll('.studio-tree-item');
+          let hasScrolled = false;
+          activeItems.forEach(el => {
+            if (el.dataset.tableName === tableStudioState.tableName) {
+              el.classList.add('active');
+              // Only auto-scroll to the FIRST matching item if navigation was NOT initiated by directly clicking the sidebar
+              if (!hasScrolled && !tableStudioState._sidebarClicked) {
+                hasScrolled = true;
+                try { el.scrollIntoView({ block: 'nearest' }); } catch(e){}
+              }
+            } else {
+              el.classList.remove('active');
+            }
+          });
+          return;
+        }
+
         container.innerHTML = '';
+        container.dataset.renderedKey = currentKey;
 
         const tree = buildDatasetHierarchyTree(sourceData, null);
         if (!tree || tree.length === 0) {
@@ -6352,8 +6428,8 @@
         function countStats(nodes) {
           if (!nodes) return;
           nodes.forEach(n => {
-            const count = n.rowCount !== undefined ? n.rowCount : getEntityRowsFromSource(sourceData, n.name).length;
-            const subtreeCount = getNodeSubtreeRowCount(n, sourceData);
+            const count = n.rowCount !== undefined ? n.rowCount : (getEntityRowsFromSource(sourceData, n.name)?.length || 0);
+            const subtreeCount = n.subtreeCount !== undefined ? n.subtreeCount : getNodeSubtreeRowCount(n, sourceData);
             if (!countedTables.has(n.name)) {
               countedTables.add(n.name);
               totalTables++;
@@ -6396,9 +6472,8 @@
         if (!nodes || nodes.length === 0) return;
 
         nodes.forEach(node => {
-          const rows = getEntityRowsFromSource(sourceData, node.name);
-          const rowCount = node.rowCount !== undefined ? node.rowCount : (rows ? rows.length : 0);
-          const subtreeCount = getNodeSubtreeRowCount(node, sourceData);
+          const rowCount = node.rowCount !== undefined ? node.rowCount : (getEntityRowsFromSource(sourceData, node.name)?.length || 0);
+          const subtreeCount = node.subtreeCount !== undefined ? node.subtreeCount : getNodeSubtreeRowCount(node, sourceData);
 
           // If hideZero is enabled and neither this node nor any of its descendants have rows > 0, skip
           if (hideZero && subtreeCount === 0) {
@@ -6417,15 +6492,10 @@
 
           const item = document.createElement('div');
           item.className = `studio-tree-item ${isSelected ? 'active' : ''} ${isZero ? 'zero-rows' : ''}`;
+          item.dataset.tableName = node.name;
           item.style.paddingLeft = `${depth * 14 + 8}px`;
 
           let countBadge = `<span class="studio-tree-badge ${isZero ? 'badge-zero' : 'badge-count'}">${rowCount}</span>`;
-
-          let condBadge = '';
-          if (node.mappings && node.mappings.length > 0) {
-            const condText = node.mappings.map(m => `${m.childField}=${m.parentField}`).join(', ');
-            condBadge = `<span class="studio-tree-cond" title="Mapping: ${escapeHtml(condText)}">${escapeHtml(condText)}</span>`;
-          }
 
           // Clean icon without words Root or Child!
           const icon = depth === 0 ? '📁' : '📄';
@@ -6438,7 +6508,6 @@
               <span class="studio-tree-name" title="${escapeHtml(fullTitle)}">${escapeHtml(node.name)}</span>
             </div>
             <div style="display:flex; align-items:center; gap:4px; flex-shrink:0;">
-              ${condBadge}
               ${countBadge}
             </div>
           `;
@@ -6447,7 +6516,9 @@
             e.stopPropagation();
             if (tableStudioState.tableName !== node.name) {
               const nodeRows = (node.rows && Array.isArray(node.rows)) ? node.rows : getEntityRowsFromSource(sourceData, node.name);
+              tableStudioState._sidebarClicked = true;
               openTableStudio(tableStudioState.side || 'left', node.name, nodeRows);
+              tableStudioState._sidebarClicked = false;
             }
           });
 
@@ -7724,33 +7795,6 @@ ORD-1004,Diana Prince,Electronics,79.00,2,true,2026-08-14`;
         downloadFile(`models.${extMap[currentGeneratorType] || 'txt'}`, elements.generatorOutput.value, 'text/plain');
       });
 
-      // Global Keyboard Shortcuts
-      function getActiveSide() {
-        const activeEl = document.activeElement;
-        if (activeEl && (elements.paneRight.contains(activeEl) || activeEl === elements.rightSearchInput || activeEl === elements.rightReplaceInput)) {
-          return 'right';
-        }
-        return state.activeTargetPane || 'left';
-      }
-
-      window.addEventListener('keydown', (e) => {
-        const side = getActiveSide();
-        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f' && !e.shiftKey) {
-          e.preventDefault();
-          openSearch(side, false);
-        } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'h') {
-          e.preventDefault();
-          openSearch(side, true);
-        } else if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'f') {
-          e.preventDefault();
-          if (side === 'right') elements.btnRightFormat.click();
-          else elements.btnLeftFormat.click();
-        } else if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'm') {
-          e.preventDefault();
-          if (side === 'right') elements.btnRightMinify.click();
-          else elements.btnLeftMinify.click();
-        }
-      });
 
       // --- INITIAL LOAD & RESTORATION FROM INDEXEDDB & LOCALSTORAGE ---
       (async function initSessionRestoration() {
