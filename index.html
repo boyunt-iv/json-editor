@@ -358,13 +358,31 @@
       transform: translate(-50%, -50%);
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 5px;
       z-index: 25;
       background: var(--bg-header);
       padding: 5px;
       border-radius: 8px;
       border: 1px solid var(--border-color);
       box-shadow: var(--shadow-lg);
+    }
+
+    .bridge-divider {
+      height: 1px;
+      background: var(--border-color);
+      margin: 1px 0;
+      width: 100%;
+    }
+
+    .btn-bridge-hier {
+      color: var(--accent-cyan) !important;
+      position: relative;
+    }
+
+    .btn-bridge-hier:hover {
+      background: rgba(46, 160, 67, 0.18) !important;
+      color: var(--accent-success) !important;
+      border-color: var(--accent-success) !important;
     }
 
     /* Pane Header */
@@ -1073,6 +1091,15 @@
       color: var(--text-dim);
       border: 1px solid rgba(110, 118, 129, 0.25);
     }
+    .studio-tree-badge.badge-cycle {
+      background: rgba(210, 153, 34, 0.2);
+      color: var(--accent-warning);
+      border: 1px solid rgba(210, 153, 34, 0.45);
+      font-size: 9.5px;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
     .studio-tree-cond {
       font-size: 9.5px;
       font-family: var(--font-mono);
@@ -1336,6 +1363,18 @@
       padding: 1px 5px;
       border-radius: 999px;
     }
+    .badge-cycle-pill {
+      font-size: 10.5px;
+      background: rgba(210, 153, 34, 0.2);
+      color: var(--accent-warning);
+      border: 1px solid rgba(210, 153, 34, 0.45);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
 
     /* Toast Notifications */
     .toast-container {
@@ -1464,9 +1503,10 @@
       </div>
 
       <!-- Hierarchy Builder Special Trigger Button -->
-      <button class="btn btn-sm btn-accent-purple" id="btnOpenHierarchy" title="Transform Flat Data to Nested Hierarchy by Parent-Child List">
+      <button class="btn btn-sm btn-accent-purple" id="btnOpenHierarchy" title="Transform Flat Data to Nested Hierarchy (Preset: Default)">
         <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="15" y="3" width="6" height="6" rx="1"/><rect x="15" y="15" width="6" height="6" rx="1"/><path d="M6 9v6a3 3 0 0 0 3 3h6"/></svg>
-        🌳 Hierarchy Builder
+        <span>🌳 Hierarchy</span>
+        <span id="badgeActiveHierPreset" style="background:rgba(0,0,0,0.28); color:var(--text-bright); border:1px solid rgba(255,255,255,0.2); font-size:10px; padding:1px 6px; border-radius:10px; font-weight:600; margin-left:4px; max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Default</span>
       </button>
 
       <div class="dropdown">
@@ -1645,13 +1685,30 @@
     <!-- Center Bridge (Splitter & Transfer Actions) -->
     <div class="splitter" id="splitter">
       <div class="bridge-bar" id="bridgeBar">
-        <button class="btn btn-sm btn-icon" id="btnBridgeCopyRight" title="Copy Left to Right (->)">
+        <!-- Raw Copy Left -> Right -->
+        <button class="btn btn-sm btn-icon" id="btnBridgeCopyRight" title="Copy Raw JSON: Left ➔ Right Pane (→)">
           <svg class="icon" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
+        <!-- Apply Hierarchy Left -> Right -->
+        <button class="btn btn-sm btn-icon btn-bridge-hier" id="btnBridgeApplyHierRight" title="⚡ Apply Hierarchy: Assemble Left Data ➔ Output to Right Pane">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M4 4h4v4H4zM16 16h4v4h-4zM4 16h4v4H4z"/><path d="M8 6h4v12H8M12 12h4"/><polyline points="14 9 17 12 14 15"/></svg>
+        </button>
+
+        <div class="bridge-divider"></div>
+
+        <!-- Compare & Diff -->
         <button class="btn btn-sm btn-icon" id="btnBridgeDiff" title="Compare & Diff Left vs Right">
           <svg class="icon" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
         </button>
-        <button class="btn btn-sm btn-icon" id="btnBridgeCopyLeft" title="Copy Right to Left (<-)">
+
+        <div class="bridge-divider"></div>
+
+        <!-- Apply Hierarchy Right -> Left -->
+        <button class="btn btn-sm btn-icon btn-bridge-hier" id="btnBridgeApplyHierLeft" title="⚡ Apply Hierarchy: Assemble Right Data ➔ Output to Left Pane">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M16 4h4v4h-4zM4 16h4v4H4zM16 16h4v4h-4z"/><path d="M16 6h-4v12h4M12 12H8"/><polyline points="10 9 7 12 10 15"/></svg>
+        </button>
+        <!-- Raw Copy Right -> Left -->
+        <button class="btn btn-sm btn-icon" id="btnBridgeCopyLeft" title="Copy Raw JSON: Right ➔ Left Pane (←)">
           <svg class="icon" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
       </div>
@@ -1794,7 +1851,10 @@
           <!-- Column 1: Input Hierarchy Specification -->
           <div style="display:flex; flex-direction:column; gap:10px;">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
-              <label class="form-label" style="font-weight:700; color:var(--text-heading);">1. Hierarchy Definition:</label>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <label class="form-label" style="font-weight:700; color:var(--text-heading); margin-bottom:0;">1. Hierarchy Definition:</label>
+                <span id="badgeModalHierPreset" style="background:rgba(56,139,253,0.15); color:var(--accent-primary); border:1px solid rgba(56,139,253,0.3); font-size:11px; padding:1px 8px; border-radius:12px; font-weight:600;">Preset: Default</span>
+              </div>
               <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
                 <button class="btn btn-sm" id="btnAutoDetectHierarchy" title="Auto-detect keys from active JSON in Left pane">✨ Auto-Detect</button>
                 <button class="btn btn-sm" id="btnReloadHierarchy" title="Re-parse definition and re-detect hierarchy tree">🔄 Reload Tree</button>
@@ -2297,6 +2357,7 @@
         theme: localStorage.getItem('json_studio_theme') || 'dark',
         layout: 'split', // 'single-left', 'split', 'single-right'
         activeTargetPane: 'left',
+        activeHierPreset: localStorage.getItem('json_studio_active_hier_preset') || 'Default',
         left: {
           view: 'tree',
           data: null,
@@ -2518,6 +2579,8 @@
 
         // Hierarchy Builder Modal
         btnOpenHierarchy: document.getElementById('btnOpenHierarchy'),
+        badgeActiveHierPreset: document.getElementById('badgeActiveHierPreset'),
+        badgeModalHierPreset: document.getElementById('badgeModalHierPreset'),
         btnReloadHierarchy: document.getElementById('btnReloadHierarchy'),
         btnAutoDetectHierarchy: document.getElementById('btnAutoDetectHierarchy'),
         btnLoadHierFile: document.getElementById('btnLoadHierFile'),
@@ -2654,7 +2717,9 @@
 
         // Bridge Transfer
         btnBridgeCopyRight: document.getElementById('btnBridgeCopyRight'),
+        btnBridgeApplyHierRight: document.getElementById('btnBridgeApplyHierRight'),
         btnBridgeDiff: document.getElementById('btnBridgeDiff'),
+        btnBridgeApplyHierLeft: document.getElementById('btnBridgeApplyHierLeft'),
         btnBridgeCopyLeft: document.getElementById('btnBridgeCopyLeft'),
 
         // Left Pane
@@ -2870,6 +2935,7 @@
           right_view: state.right?.view ?? 'code',
           layout: state.layout ?? 'split',
           theme: state.theme ?? 'dark',
+          active_hier_preset: state.activeHierPreset ?? 'Default',
           hierarchy_text: elements.hierarchyInputText?.value ?? '',
           hierarchy_result: elements.hierarchyResultPreview?.value ?? '',
           query_input: elements.queryInput?.value ?? '',
@@ -2888,6 +2954,7 @@
           localStorage.setItem('json_studio_right_view', sessionPayload.right_view);
           localStorage.setItem('json_studio_layout', sessionPayload.layout);
           localStorage.setItem('json_studio_theme', sessionPayload.theme);
+          localStorage.setItem('json_studio_active_hier_preset', sessionPayload.active_hier_preset);
           localStorage.setItem('json_studio_hierarchy_text', sessionPayload.hierarchy_text);
           localStorage.setItem('json_studio_hierarchy_result', sessionPayload.hierarchy_result);
           localStorage.setItem('json_studio_query_input', sessionPayload.query_input);
@@ -3127,11 +3194,15 @@
 
       // --- HIERARCHY TREE PARSER & RELATIONAL ASSEMBLER ENGINE ---
       function parseHierarchyText(text) {
+        if (!text || typeof text !== 'string') return null;
         const lines = text.split('\n').filter(l => l.trim().length > 0);
         if (lines.length === 0) return null;
 
-        const root = { name: '', depth: 0, children: [], parent: null, mappings: [] };
+        // 1. First pass: Parse raw indented lines into AST & extract parent->child relations
+        const root = { name: '', indent: -1, children: [], parent: null, mappings: [] };
         const stack = [root];
+        const relationMap = new Map(); // parentName -> Map of childName -> { name, mappings: [] }
+        const rootEntities = [];
 
         lines.forEach(line => {
           const indentMatch = line.match(/^(\s*)/);
@@ -3160,20 +3231,70 @@
             });
           }
 
-          const depth = Math.floor(indentSpaces / 2) + 1;
-          const node = { name: entityName, depth, children: [], parent: null, mappings, rawLine: line };
-
-          while (stack.length > depth) {
+          // Unwind stack when indentation decreases or stays at same level
+          while (stack.length > 1 && indentSpaces <= stack[stack.length - 1].indent) {
             stack.pop();
           }
 
           const parent = stack[stack.length - 1];
-          node.parent = parent === root ? null : parent.name;
-          parent.children.push(node);
+          const node = {
+            name: entityName,
+            indent: indentSpaces,
+            depth: stack.length,
+            children: [],
+            parent: parent === root ? null : parent.name,
+            mappings,
+            rawLine: line
+          };
+
+          if (parent === root) {
+            rootEntities.push(node);
+          } else {
+            parent.children.push(node);
+            // Register relationship in global graph
+            if (!relationMap.has(parent.name)) relationMap.set(parent.name, new Map());
+            const pMap = relationMap.get(parent.name);
+            if (!pMap.has(node.name)) {
+              pMap.set(node.name, { name: node.name, mappings });
+            }
+          }
+
           stack.push(node);
         });
 
-        return root.children;
+        // 2. Second pass: Build complete recursive tree with graph propagation and cycle detection
+        function buildExpandedTree(name, parentName = null, mappings = [], ancestorPath = []) {
+          const isCycle = ancestorPath.includes(name);
+          const cycleTarget = isCycle ? name : null;
+
+          const node = {
+            name,
+            parent: parentName,
+            mappings: mappings || [],
+            isCycle,
+            cycleTarget,
+            children: []
+          };
+
+          if (isCycle) {
+            // STOP recursive expansion here to prevent infinite loop
+            return node;
+          }
+
+          const currentPath = [...ancestorPath, name];
+          const childRelations = relationMap.get(name);
+
+          if (childRelations && childRelations.size > 0) {
+            for (let [childName, rel] of childRelations.entries()) {
+              const childNode = buildExpandedTree(childName, name, rel.mappings, currentPath);
+              node.children.push(childNode);
+            }
+          }
+
+          return node;
+        }
+
+        return rootEntities.map(rootNode => buildExpandedTree(rootNode.name, null, rootNode.mappings, []));
       }
 
       function sortEntityColumns(cols, rows = []) {
@@ -3399,12 +3520,18 @@
             condBadge = `<span style="font-size:10.5px; background:rgba(56,139,253,0.18); color:var(--accent-primary); border:1px solid rgba(56,139,253,0.3); padding:1px 6px; border-radius:4px; margin-left:4px;">[${escapeHtml(condText)}]</span>`;
           }
 
+          let cycleBadge = '';
+          if (node.isCycle) {
+            cycleBadge = `<span class="badge-cycle-pill" title="Circular reference: loops back to [${node.cycleTarget}] (Expansion stopped)">🔄 (Loop to ${escapeHtml(node.cycleTarget || node.name)})</span>`;
+          }
+
           div.innerHTML = `
             <div class="hierarchy-node-pill" style="cursor:${onNodeClick ? 'pointer' : 'default'}; display:inline-flex; align-items:center; gap:6px; ${rowCount === 0 ? 'opacity:0.7;' : ''}" data-node-name="${escapeHtml(node.name)}">
               <span style="color:var(--accent-purple); font-weight:700;">${depth === 0 ? '📁 [Root]' : '↳ [Child]'}</span>
               <span style="font-weight:700; color:var(--text-heading); font-size:12px;">${escapeHtml(node.name)}</span>
               ${countBadge}
               ${condBadge}
+              ${cycleBadge}
               ${node.parent ? `<span style="font-size:10px; color:var(--text-dim);">(Parent: ${escapeHtml(node.parent)})</span>` : ''}
               ${onNodeClick ? `<span style="font-size:10px; color:var(--accent-primary); text-decoration:underline; margin-left:4px;">View Table ➔</span>` : ''}
             </div>
@@ -3579,11 +3706,15 @@
           return null;
         }
 
-        function assembleNode(node, currentRows) {
+        function assembleNode(node, currentRows, visitedBranch = new Set()) {
           if (!currentRows || currentRows.length === 0) return;
           matchCounts[node.name] = (matchCounts[node.name] || 0) + currentRows.length;
 
           if (!node.children || node.children.length === 0) return;
+          if (node.isCycle || visitedBranch.has(node.name)) return;
+
+          const nextBranch = new Set(visitedBranch);
+          nextBranch.add(node.name);
 
           node.children.forEach(childNode => {
             const childEntityRows = getEntityRows(childNode.name);
@@ -3619,8 +3750,10 @@
 
               parentRow[childNode.name] = matchedChildren;
 
-              // Recursively assemble grandchildren under these matched children
-              assembleNode(childNode, matchedChildren);
+              // Recursively assemble grandchildren under these matched children only if not cyclic
+              if (!childNode.isCycle && !nextBranch.has(childNode.name)) {
+                assembleNode(childNode, matchedChildren, nextBranch);
+              }
             });
           });
         }
@@ -4390,9 +4523,52 @@
         });
       });
 
+      // --- HIERARCHY PRESETS & ACTIVE STATE MANAGEMENT ---
+      function setActiveHierPreset(name, shouldSave = true) {
+        state.activeHierPreset = name || 'Default';
+        if (shouldSave) {
+          try {
+            localStorage.setItem('json_studio_active_hier_preset', state.activeHierPreset);
+          } catch(e){}
+        }
+
+        // 1. Update Top Toolbar Badge & Title
+        if (elements.badgeActiveHierPreset) {
+          elements.badgeActiveHierPreset.textContent = state.activeHierPreset;
+        }
+        if (elements.btnOpenHierarchy) {
+          elements.btnOpenHierarchy.setAttribute('title', `Transform Flat Data to Nested Hierarchy (Active Preset: ${state.activeHierPreset})`);
+        }
+
+        // 2. Update Modal Badges & Buttons
+        if (elements.badgeModalHierPreset) {
+          elements.badgeModalHierPreset.textContent = `Preset: ${state.activeHierPreset}`;
+        }
+        if (elements.btnHierarchyPresets) {
+          elements.btnHierarchyPresets.innerHTML = `Presets [ <span style="color:var(--accent-cyan); font-weight:700;">${escapeHtml(state.activeHierPreset)}</span> ] ▾`;
+        }
+
+        // 3. Update Bridge Bar Button Titles
+        if (elements.btnBridgeApplyHierRight) {
+          elements.btnBridgeApplyHierRight.setAttribute('title', `⚡ Apply Hierarchy [${state.activeHierPreset}]: Assemble Left Data ➔ Output to Right Pane`);
+        }
+        if (elements.btnBridgeApplyHierLeft) {
+          elements.btnBridgeApplyHierLeft.setAttribute('title', `⚡ Apply Hierarchy [${state.activeHierPreset}]: Assemble Right Data ➔ Output to Left Pane`);
+        }
+
+        renderCustomPresetsMenu();
+      }
+
       elements.btnCloseModalHierarchy.addEventListener('click', () => elements.modalHierarchy.classList.remove('active'));
       elements.btnCancelHierarchy.addEventListener('click', () => elements.modalHierarchy.classList.remove('active'));
-      elements.hierarchyInputText.addEventListener('input', () => updateHierarchyLivePreview(true));
+      elements.hierarchyInputText.addEventListener('input', () => {
+        if (state.activeHierPreset && !state.activeHierPreset.endsWith('(modified)') && state.activeHierPreset !== 'Custom') {
+          setActiveHierPreset(`${state.activeHierPreset} (modified)`);
+        } else if (!state.activeHierPreset) {
+          setActiveHierPreset('Custom');
+        }
+        updateHierarchyLivePreview(true);
+      });
       elements.hierMultiParentCheck.addEventListener('change', () => updateHierarchyLivePreview(false));
 
       // Reload Tree Button
@@ -4408,6 +4584,7 @@
         runWithLoading('Auto-detecting Hierarchy Relations...', () => {
           const detected = autoDetectHierarchyFromData(state.left.data);
           elements.hierarchyInputText.value = detected;
+          setActiveHierPreset('Auto-Detected');
           updateHierarchyLivePreview(true);
           showToast('Auto-detected hierarchy with field mappings!', 'success');
         });
@@ -4434,6 +4611,17 @@
         const header = elements.customPresetsHeader;
         const divider = elements.customPresetsDivider;
 
+        // Update built-in preset checkmarks in dropdown
+        if (elements.hierarchyPresetsMenu) {
+          elements.hierarchyPresetsMenu.querySelectorAll('.dropdown-item[data-hier-preset]').forEach(item => {
+            const p = item.dataset.hierPreset;
+            const pName = p === 'ecommerce' ? 'E-Commerce' : (p === 'org' ? 'Company Org' : p);
+            const isMatch = state.activeHierPreset === pName;
+            const baseText = p === 'ecommerce' ? '🛒 Orders & Items (orders -> items, shipping)' : '🏢 Company & Teams (company -> dept -> employee)';
+            item.innerHTML = `${isMatch ? '✓ <strong style="color:var(--accent-cyan);">' : ''}${baseText}${isMatch ? '</strong>' : ''}`;
+          });
+        }
+
         if (!list) return;
         list.innerHTML = '';
 
@@ -4447,11 +4635,14 @@
         if (divider) divider.style.display = 'block';
 
         keys.forEach(k => {
+          const isCurrent = state.activeHierPreset === k;
           const item = document.createElement('div');
           item.className = 'dropdown-item';
           item.style.justifyContent = 'space-between';
           item.innerHTML = `
-            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:180px;">⭐ ${escapeHtml(k)}</span>
+            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:180px; ${isCurrent ? 'color:var(--accent-cyan); font-weight:700;' : ''}">
+              ${isCurrent ? '✓ ⭐' : '⭐'} ${escapeHtml(k)}
+            </span>
             <span data-delete-hier-preset="${escapeHtml(k)}" title="Delete preset" style="color:var(--accent-danger); font-size:11px; padding:0 4px; cursor:pointer;" onclick="event.stopPropagation();">🗑️</span>
           `;
           item.addEventListener('click', () => {
@@ -4463,6 +4654,7 @@
                 elements.hierarchyInputText.value = data.definition;
                 if (data.supportMultiParent !== undefined) elements.hierMultiParentCheck.checked = data.supportMultiParent;
               }
+              setActiveHierPreset(k);
               elements.hierarchyPresetsMenu.classList.remove('active');
               updateHierarchyLivePreview(true);
               showToast(`Loaded preset "${k}"`, 'success');
@@ -4476,6 +4668,9 @@
               if (confirm(`Delete preset "${k}"?`)) {
                 delete presets[k];
                 saveCustomHierPresets(presets);
+                if (state.activeHierPreset === k) {
+                  setActiveHierPreset('Custom');
+                }
                 showToast(`Deleted preset "${k}"`, 'info');
               }
             });
@@ -4501,7 +4696,7 @@
           showToast('Exported hierarchy definition as .txt file!', 'success');
         } else {
           const payload = {
-            name: "Hierarchy Definition Preset",
+            name: state.activeHierPreset || "Hierarchy Definition Preset",
             exportedAt: new Date().toISOString(),
             supportMultiParent: elements.hierMultiParentCheck.checked,
             definition: text
@@ -4517,6 +4712,7 @@
         const reader = new FileReader();
         reader.onload = (e) => {
           const content = e.target.result;
+          const presetName = file.name.replace(/\.[^/.]+$/, '');
           runWithLoading(`Loading from ${file.name}...`, () => {
             try {
               if (file.name.endsWith('.json') || content.trim().startsWith('{')) {
@@ -4534,10 +4730,12 @@
               } else {
                 elements.hierarchyInputText.value = content;
               }
+              setActiveHierPreset(presetName);
               updateHierarchyLivePreview(true);
               showToast(`Loaded preset from "${file.name}"!`, 'success');
             } catch (err) {
               elements.hierarchyInputText.value = content;
+              setActiveHierPreset(presetName);
               updateHierarchyLivePreview(true);
               showToast(`Loaded preset text from "${file.name}"!`, 'success');
             }
@@ -4559,8 +4757,10 @@
             if (p === 'ecommerce') {
               elements.hierarchyInputText.value = `orders\n- order_items [order_id = id]\n- order_shipping [order_id = id]`;
               setPaneData('left', ECOMMERCE_RELATIONAL_DATA);
+              setActiveHierPreset('E-Commerce');
             } else if (p === 'org') {
               elements.hierarchyInputText.value = `company\n- departments [company_id = id]\n  - employees [department_id = id]`;
+              setActiveHierPreset('Company Org');
             }
             elements.hierarchyPresetsMenu.classList.remove('active');
             updateHierarchyLivePreview(true);
@@ -4588,7 +4788,10 @@
       if (elements.menuSaveHierCustom) {
         elements.menuSaveHierCustom.addEventListener('click', () => {
           elements.hierarchyPresetsMenu.classList.remove('active');
-          const name = prompt('Enter preset name to save in browser:', 'My Hierarchy Preset');
+          const defaultName = state.activeHierPreset && !state.activeHierPreset.includes('(') && state.activeHierPreset !== 'Custom'
+            ? state.activeHierPreset
+            : 'My Hierarchy Preset';
+          const name = prompt('Enter preset name to save in browser:', defaultName);
           if (name && name.trim()) {
             const presets = getCustomHierPresets();
             presets[name.trim()] = {
@@ -4597,6 +4800,7 @@
               savedAt: new Date().toISOString()
             };
             saveCustomHierPresets(presets);
+            setActiveHierPreset(name.trim());
             showToast(`Preset "${name.trim()}" saved!`, 'success');
           }
         });
@@ -6496,10 +6700,14 @@
           item.style.paddingLeft = `${depth * 14 + 8}px`;
 
           let countBadge = `<span class="studio-tree-badge ${isZero ? 'badge-zero' : 'badge-count'}">${rowCount}</span>`;
+          let cycleBadge = '';
+          if (node.isCycle) {
+            cycleBadge = `<span class="studio-tree-badge badge-cycle" title="Circular Loop: refers back to [${node.cycleTarget}] (Expansion stopped)">🔄 (${escapeHtml(node.cycleTarget || node.name)})</span>`;
+          }
 
           // Clean icon without words Root or Child!
-          const icon = depth === 0 ? '📁' : '📄';
-          const fullTitle = `${node.name}${rowCount !== undefined ? ` • (${rowCount} records)` : ''}${node.mappings && node.mappings.length > 0 ? `\nRelation: ${node.mappings.map(m => `${m.childField} = ${m.parentField}`).join(', ')}` : ''}`;
+          const icon = node.isCycle ? '🔄' : (depth === 0 ? '📁' : '📄');
+          const fullTitle = `${node.name}${node.isCycle ? ` [Circular Loop ➔ ${node.cycleTarget}]` : ''}${rowCount !== undefined ? ` • (${rowCount} records)` : ''}${node.mappings && node.mappings.length > 0 ? `\nRelation: ${node.mappings.map(m => `${m.childField} = ${m.parentField}`).join(', ')}` : ''}`;
 
           item.setAttribute('title', fullTitle);
           item.innerHTML = `
@@ -6508,6 +6716,7 @@
               <span class="studio-tree-name" title="${escapeHtml(fullTitle)}">${escapeHtml(node.name)}</span>
             </div>
             <div style="display:flex; align-items:center; gap:4px; flex-shrink:0;">
+              ${cycleBadge}
               ${countBadge}
             </div>
           `;
@@ -7240,6 +7449,57 @@
           showToast('Transferred Left JSON ➔ Right Pane', 'success');
         });
       });
+
+      function executeBridgeHierarchyAssembly(sourceSide, targetSide) {
+        const sourceData = state[sourceSide].data;
+        if (!sourceData || typeof sourceData !== 'object') {
+          showToast(`No valid JSON data in ${sourceSide === 'left' ? 'Left' : 'Right'} pane to assemble!`, 'error');
+          return;
+        }
+
+        const rawHierText = (elements.hierarchyInputText && elements.hierarchyInputText.value.trim())
+          || localStorage.getItem('json_studio_hierarchy_text')
+          || autoDetectHierarchyFromData(sourceData);
+
+        if (!rawHierText || !rawHierText.trim()) {
+          showToast('No hierarchy definition found. Open Hierarchy Builder to configure!', 'warning');
+          return;
+        }
+
+        const tree = parseHierarchyText(rawHierText.trim());
+        if (!tree || tree.length === 0) {
+          showToast('Invalid hierarchy definition.', 'error');
+          return;
+        }
+
+        runWithLoading(`Assembling Hierarchy (${sourceSide === 'left' ? 'Left ➔ Right' : 'Right ➔ Left'})...`, () => {
+          try {
+            const multiParent = elements.hierMultiParentCheck ? elements.hierMultiParentCheck.checked : true;
+            const assembled = assembleRelationalHierarchy(sourceData, tree, multiParent);
+            if (assembled && assembled.result) {
+              setPaneData(targetSide, assembled.result);
+              showToast(`✨ Assembled & Applied Hierarchy (${sourceSide === 'left' ? 'Left ➔ Right' : 'Right ➔ Left'})!`, 'success');
+            } else {
+              showToast('Hierarchy assembly returned empty result.', 'error');
+            }
+          } catch (err) {
+            showToast(`Hierarchy assembly error: ${err.message}`, 'error');
+          }
+        });
+      }
+
+      if (elements.btnBridgeApplyHierRight) {
+        elements.btnBridgeApplyHierRight.addEventListener('click', () => {
+          executeBridgeHierarchyAssembly('left', 'right');
+        });
+      }
+
+      if (elements.btnBridgeApplyHierLeft) {
+        elements.btnBridgeApplyHierLeft.addEventListener('click', () => {
+          executeBridgeHierarchyAssembly('right', 'left');
+        });
+      }
+
       elements.btnBridgeCopyLeft.addEventListener('click', () => {
         runWithLoading('Transferring JSON...', () => {
           setPaneData('left', state.right.data);
@@ -7806,6 +8066,7 @@ ORD-1004,Diana Prince,Electronics,79.00,2,true,2026-08-14`;
           let savedLeftView = localStorage.getItem('json_studio_left_view');
           let savedRightView = localStorage.getItem('json_studio_right_view');
           let savedLayout = localStorage.getItem('json_studio_layout');
+          let savedActiveHierPreset = localStorage.getItem('json_studio_active_hier_preset');
           let savedHierarchyText = localStorage.getItem('json_studio_hierarchy_text');
           let savedHierarchyResult = localStorage.getItem('json_studio_hierarchy_result');
           let savedQueryInput = localStorage.getItem('json_studio_query_input');
@@ -7820,6 +8081,7 @@ ORD-1004,Diana Prince,Electronics,79.00,2,true,2026-08-14`;
               if (idbData.left_view !== undefined) savedLeftView = idbData.left_view;
               if (idbData.right_view !== undefined) savedRightView = idbData.right_view;
               if (idbData.layout !== undefined) savedLayout = idbData.layout;
+              if (idbData.active_hier_preset !== undefined) savedActiveHierPreset = idbData.active_hier_preset;
               if (idbData.hierarchy_text !== undefined) savedHierarchyText = idbData.hierarchy_text;
               if (idbData.hierarchy_result !== undefined) savedHierarchyResult = idbData.hierarchy_result;
               if (idbData.query_input !== undefined) savedQueryInput = idbData.query_input;
@@ -7829,6 +8091,12 @@ ORD-1004,Diana Prince,Electronics,79.00,2,true,2026-08-14`;
 
           if (savedLayout) {
             setLayout(savedLayout);
+          }
+
+          if (savedActiveHierPreset) {
+            setActiveHierPreset(savedActiveHierPreset, false);
+          } else {
+            setActiveHierPreset('E-Commerce', false);
           }
 
           if (savedHierarchyText && elements.hierarchyInputText) {
